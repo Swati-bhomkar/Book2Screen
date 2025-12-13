@@ -1,0 +1,7 @@
+{
+  "name": "Book2Screen",
+  "description": "A dark-themed platform to discover famous book-to-movie adaptations, explore authors, find local book sales, and track user reviews.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
