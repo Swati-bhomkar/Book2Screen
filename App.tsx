@@ -7,6 +7,761 @@ import { Users, MapPin, Quote, Plus, Book, ArrowRight, Lock, Star, MessageSquare
 
 // --- Page Components ---
 
+const Home: React.FC<{ adaptations: Adaptation[]; isLoggedIn: boolean }> = ({ adaptations, isLoggedIn }) => {
+  const comparisonItems = adaptations.filter(item => item.comparisonSummary).slice(0, 3);
+  const featuredItems = adaptations.slice(0, 3);
+  const navigate = useNavigate();
+
+  const handleExploreClick = () => {
+      if (isLoggedIn) {
+          navigate('/adaptations');
+      } else {
+          navigate('/login');
+      }
+  };
+
+  const backgroundIcons = useMemo(() => {
+      const icons = [Film, Clapperboard, Camera, Video, Star, BookOpen, Tv];
+      return Array.from({ length: 15 }).map((_, i) => ({
+          id: i,
+          Icon: icons[Math.floor(Math.random() * icons.length)],
+          left: Math.floor(Math.random() * 95),
+          size: Math.floor(Math.random() * (50 - 20 + 1) + 20),
+          duration: Math.floor(Math.random() * (45 - 25 + 1) + 25),
+          delay: Math.floor(Math.random() * 20),
+          endRotation: Math.floor(Math.random() * 90 - 45)
+      }));
+  }, []);
+
+  return (
+    <div className="relative pb-20">
+      <style>{`
+        @keyframes float-up {
+            0% { transform: translateY(110%) rotate(0deg) scale(0.8); opacity: 0; }
+            10% { opacity: 0.15; }
+            90% { opacity: 0.15; }
+            100% { transform: translateY(-20%) rotate(var(--tw-rotate-end)) scale(1.1); opacity: 0; }
+        }
+      `}</style>
+
+      <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-slate-950">
+        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+            {backgroundIcons.map((item) => (
+                <div 
+                    key={item.id}
+                    className="absolute bottom-0 text-slate-500/20"
+                    style={{
+                        left: `${item.left}%`,
+                        width: `${item.size}px`,
+                        height: `${item.size}px`,
+                        animation: `float-up ${item.duration}s linear infinite`,
+                        animationDelay: `-${item.delay}s`,
+                        '--tw-rotate-end': `${item.endRotation}deg`
+                    } as React.CSSProperties}
+                >
+                    <item.Icon strokeWidth={1.5} className="w-full h-full" />
+                </div>
+            ))}
+        </div>
+
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-900/10 rounded-full blur-[100px] z-0"></div>
+        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-900/10 rounded-full blur-[80px] z-0"></div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 text-center">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-white mb-6 tracking-tight whitespace-nowrap">
+            Where Stories Meet <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-fuchsia-500 to-purple-600">Screens</span>
+          </h1>
+          <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-3xl mx-auto font-light leading-relaxed">
+            Discover the magic of adaptation where stories unite page and screen. Bringing readers and movie lovers together in one place.
+          </p>
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
+            <button 
+                onClick={handleExploreClick}
+                className="bg-purple-600 text-white px-8 py-4 rounded-full font-bold hover:bg-purple-500 transition-all duration-300 shadow-lg shadow-purple-900/30 transform hover:-translate-y-1"
+            >
+              Explore Adaptations
+            </button>
+            <Link 
+                to="/map" 
+                className="bg-transparent border border-slate-600 text-slate-200 px-8 py-4 rounded-full font-bold hover:bg-slate-800 hover:border-slate-500 transition-all duration-300 flex items-center justify-center gap-2"
+            >
+              <MapPin className="w-5 h-5" />
+              Find Nearby Books
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 relative z-20 mb-20">
+          <div className="text-center mb-16">
+            <h3 className="text-white font-serif text-3xl mb-4">Featured Adaptations</h3>
+            <p className="text-slate-400">Trending comparisons this week.</p>
+          </div>
+          
+          <div className="grid max-w-2xl grid-cols-1 gap-x-8 gap-y-12 lg:mx-0 lg:max-w-none lg:grid-cols-3">
+             {featuredItems.map((item) => (
+                <div key={item.id} className="flex flex-col items-start justify-between bg-slate-900 p-6 rounded-3xl border border-slate-800 hover:border-purple-500/50 transition-all duration-300 hover:-translate-y-1 shadow-lg cursor-pointer" onClick={() => navigate(isLoggedIn ? `/adaptation/${item.id}` : '/login')}>
+                    <div className="relative w-full aspect-[16/9] overflow-hidden rounded-2xl mb-6 group">
+                         <div className="absolute inset-0 flex">
+                             <img src={item.coverUrl} className="w-1/2 h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Book" />
+                             <img src={item.moviePosterUrl} className="w-1/2 h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Movie" />
+                         </div>
+                         <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all"></div>
+                    </div>
+                    <div className="max-w-xl w-full">
+                        <div className="flex items-center gap-x-4 text-xs mb-3">
+                             <span className="text-purple-400 font-bold">{item.releaseYear}</span>
+                             <span className="relative z-10 rounded-full bg-slate-800 px-3 py-1 font-medium text-slate-300 border border-slate-700">{item.genre[0]}</span>
+                        </div>
+                        <div className="group relative">
+                             <h3 className="text-xl font-bold leading-6 text-white group-hover:text-purple-400 transition-colors mb-2">
+                                 {item.movieTitle}
+                             </h3>
+                             <p className="line-clamp-3 text-sm leading-relaxed text-slate-400">{item.comparisonSummary}</p>
+                        </div>
+                    </div>
+                </div>
+             ))}
+          </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mb-20">
+          <div className="text-center mb-12">
+              <h2 className="text-3xl font-serif font-bold text-white">Discover More</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Link to="/authors" className="group bg-slate-900 p-6 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition-all hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-purple-900/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
+                      <Users className="w-6 h-6 text-purple-400 group-hover:text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Explore Authors</h3>
+                  <p className="text-slate-400 text-sm">Meet the masterminds behind the stories.</p>
+              </Link>
+              
+              <Link to="/novels" className="group bg-slate-900 p-6 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition-all hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-purple-900/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
+                      <Star className="w-6 h-6 text-purple-400 group-hover:text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Famous Novels</h3>
+                  <p className="text-slate-400 text-sm">Browse curated lists of legendary books.</p>
+              </Link>
+
+              <Link to="/map" className="group bg-slate-900 p-6 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition-all hover:-translate-y-1">
+                   <div className="w-12 h-12 bg-purple-900/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
+                      <MapPin className="w-6 h-6 text-purple-400 group-hover:text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Sales Near You</h3>
+                  <p className="text-slate-400 text-sm">Find book fairs and markets in your area.</p>
+              </Link>
+
+              <Link to="/reviews" className="group bg-slate-900 p-6 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition-all hover:-translate-y-1">
+                   <div className="w-12 h-12 bg-purple-900/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
+                      <MessageSquare className="w-6 h-6 text-purple-400 group-hover:text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-white mb-2">Reviews</h3>
+                  <p className="text-slate-400 text-sm">See what the community is saying.</p>
+              </Link>
+          </div>
+      </div>
+
+      <div className="bg-slate-900/50 py-20 border-y border-slate-800 mb-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+             <div className="text-center mb-16">
+                 <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4">Book vs Movie</h2>
+                 <p className="text-purple-400 text-lg tracking-widest uppercase font-semibold">Which tells it better?</p>
+             </div>
+
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                 {comparisonItems.map((item) => (
+                     <div key={item.id} className="relative bg-slate-950 border border-slate-800 rounded-3xl p-8 hover:border-purple-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-900/10 group flex flex-col justify-between h-full">
+                         
+                         <div>
+                            <h3 className="text-2xl font-bold text-white mb-6 text-center group-hover:text-purple-300 transition-colors">{item.bookTitle}</h3>
+                            
+                            <div className="bg-slate-900 rounded-2xl p-6 mb-6 border border-slate-800 relative overflow-hidden">
+                                <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-pink-500 to-purple-600"></div>
+                                <p className="text-slate-300 text-lg leading-relaxed italic text-center">
+                                    "{item.comparisonSummary}"
+                                </p>
+                            </div>
+                         </div>
+
+                         <div className="text-center mt-auto">
+                            <Link to={isLoggedIn ? "/adaptations" : "/login"} className="inline-flex items-center gap-2 text-purple-400 text-sm font-bold hover:text-white transition-colors uppercase tracking-wide bg-slate-900 px-6 py-3 rounded-full border border-slate-800 hover:bg-purple-600 hover:border-purple-500">
+                                Full Analysis <ArrowRight className="w-4 h-4" />
+                            </Link>
+                         </div>
+                     </div>
+                 ))}
+             </div>
+        </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-12">
+          <div className="inline-block p-3 rounded-full bg-slate-800 mb-6">
+              <BookOpen className="w-8 h-8 text-purple-500" />
+          </div>
+          <h2 className="text-3xl font-serif font-bold text-white mb-6">About Book2Screen</h2>
+          <p className="text-lg text-slate-400 leading-relaxed">
+              Book2Screen is your ultimate companion for navigating the intersection of literature and cinema. 
+              We believe that every adaptation is a conversation between mediums. Our platform helps you track what you've read and watched, 
+              compare artistic choices, and discover local literary events. Whether you're a purist who believes "the book was better" 
+              or a cinephile who loves visual storytelling, there's a place for you here.
+          </p>
+      </div>
+    </div>
+  );
+};
+
+interface MapLocation {
+    id: string;
+    name: string;
+    type: 'Fair' | 'Store' | 'Market' | 'Library';
+    date?: string;
+    description: string;
+    x: number;
+    y: number;
+    address: string;
+}
+
+const MOCK_LOCATIONS: MapLocation[] = [
+    { id: '1', name: 'Downtown Literary Fair', type: 'Fair', date: 'Oct 25 - Oct 27', description: 'Annual book fair featuring local authors and rare collectibles.', x: 45, y: 35, address: '120 Main St, City Center' },
+    { id: '2', name: 'The Old Page Shop', type: 'Store', description: 'Vintage bookstore specializing in first editions and classic sci-fi.', x: 25, y: 60, address: '45 Willow Ave, Old Town' },
+    { id: '3', name: 'Riverside Book Market', type: 'Market', date: 'Every Sunday', description: 'Open-air market with second-hand books at bargain prices.', x: 70, y: 55, address: 'River Walk Promenade' },
+    { id: '4', name: 'Central City Library', type: 'Library', description: 'Hosting a "Dune" reading marathon this weekend.', x: 55, y: 20, address: '800 Library Ln' },
+    { id: '5', name: 'West End Comics & Books', type: 'Store', description: 'Huge selection of graphic novels and movie adaptations.', x: 15, y: 40, address: '22 West End Blvd' },
+    { id: '6', name: 'University Scholar Sale', type: 'Fair', date: 'Nov 01', description: 'Academic texts and classic literature clearance sale.', x: 80, y: 30, address: 'University Campus, Hall B' },
+];
+
+const MapPage: React.FC = () => {
+    const [selectedLocation, setSelectedLocation] = useState<MapLocation | null>(null);
+    const [filter, setFilter] = useState<string>('All');
+
+    const filteredLocations = useMemo(() => {
+        return filter === 'All' ? MOCK_LOCATIONS : MOCK_LOCATIONS.filter(l => l.type === filter);
+    }, [filter]);
+
+    const getPinColor = (type: string) => {
+        switch(type) {
+            case 'Fair': return 'text-purple-500';
+            case 'Store': return 'text-blue-500';
+            case 'Market': return 'text-orange-500';
+            case 'Library': return 'text-green-500';
+            default: return 'text-white';
+        }
+    };
+
+    return (
+        <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] bg-slate-950 overflow-hidden">
+            <div className="w-full lg:w-1/3 bg-slate-900 border-r border-slate-800 flex flex-col z-20 shadow-2xl">
+                <div className="p-6 border-b border-slate-800">
+                    <h2 className="text-2xl font-serif font-bold text-white mb-2">Book Sales & Events</h2>
+                    <p className="text-slate-400 text-sm mb-6">Discover literary happenings near you.</p>
+                    
+                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                        {['All', 'Fair', 'Store', 'Market', 'Library'].map(f => (
+                            <button 
+                                key={f}
+                                onClick={() => setFilter(f)}
+                                className={`px-3 py-1 rounded-full text-xs font-bold transition-colors whitespace-nowrap ${filter === f ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'}`}
+                            >
+                                {f}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {filteredLocations.map(loc => (
+                        <div 
+                            key={loc.id}
+                            onClick={() => setSelectedLocation(loc)}
+                            className={`p-4 rounded-xl border transition-all cursor-pointer group ${selectedLocation?.id === loc.id ? 'bg-purple-900/20 border-purple-500' : 'bg-slate-950 border-slate-800 hover:border-slate-600'}`}
+                        >
+                            <div className="flex justify-between items-start mb-1">
+                                <h4 className={`font-bold ${selectedLocation?.id === loc.id ? 'text-purple-400' : 'text-white group-hover:text-purple-400'}`}>{loc.name}</h4>
+                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-900 ${getPinColor(loc.type)}`}>{loc.type}</span>
+                            </div>
+                            <p className="text-slate-400 text-xs mb-2 line-clamp-2">{loc.description}</p>
+                            <div className="flex items-center gap-2 text-slate-500 text-xs">
+                                <MapPin className="w-3 h-3" /> {loc.address}
+                            </div>
+                            {loc.date && (
+                                <div className="mt-2 text-xs text-green-400 font-bold flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" /> {loc.date}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="relative flex-1 bg-slate-950 overflow-hidden">
+                <div 
+                    className="absolute inset-0 w-full h-full bg-slate-900 opacity-50"
+                    style={{
+                        backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)`,
+                        backgroundSize: '40px 40px',
+                    }}
+                ></div>
+                <div className="absolute top-0 left-1/3 w-20 h-full bg-slate-800/30 skew-x-12 blur-sm"></div>
+                <div className="absolute top-1/2 left-0 w-full h-16 bg-slate-800/30 -skew-y-6 blur-sm"></div>
+                
+                {filteredLocations.map(loc => (
+                    <div 
+                        key={loc.id}
+                        className="absolute cursor-pointer group z-10 transition-all duration-300"
+                        style={{ top: `${loc.y}%`, left: `${loc.x}%`, transform: 'translate(-50%, -100%)' }}
+                        onClick={(e) => { e.stopPropagation(); setSelectedLocation(loc); }}
+                    >
+                        <div className={`relative ${selectedLocation?.id === loc.id ? 'scale-125' : 'group-hover:scale-110'} transition-transform duration-300`}>
+                            <MapPin className={`w-10 h-10 ${getPinColor(loc.type)} fill-slate-900`} strokeWidth={2} />
+                            {selectedLocation?.id === loc.id && (
+                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-1 bg-black/50 blur-sm rounded-full"></div>
+                            )}
+                        </div>
+                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
+                            {loc.name}
+                        </div>
+                    </div>
+                ))}
+
+                {selectedLocation && (
+                    <div className="absolute bottom-6 left-6 right-6 lg:left-auto lg:right-6 lg:w-80 bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl p-6 shadow-2xl z-30 animate-fade-in-up">
+                        <button 
+                            onClick={() => setSelectedLocation(null)}
+                            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        
+                        <div className="flex items-center gap-2 mb-1">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded bg-slate-800 uppercase ${getPinColor(selectedLocation.type)}`}>
+                                {selectedLocation.type}
+                            </span>
+                            {selectedLocation.date && (
+                                <span className="text-xs text-green-400 font-bold flex items-center gap-1">
+                                    <Clock className="w-3 h-3" /> {selectedLocation.date}
+                                </span>
+                            )}
+                        </div>
+                        
+                        <h3 className="text-xl font-bold text-white mb-2 pr-6">{selectedLocation.name}</h3>
+                        <p className="text-slate-300 text-sm mb-4 leading-relaxed">{selectedLocation.description}</p>
+                        
+                        <div className="space-y-3 mb-6">
+                            <div className="flex items-start gap-3 text-sm text-slate-400">
+                                <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
+                                <span>{selectedLocation.address}</span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            <button className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg text-sm font-bold transition-colors">
+                                <Navigation className="w-4 h-4" /> Directions
+                            </button>
+                            <button className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-lg text-sm font-bold transition-colors border border-slate-700">
+                                <ExternalLink className="w-4 h-4" /> Details
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                <div className="absolute bottom-6 right-6 lg:right-auto lg:left-6 flex flex-col gap-2">
+                    <button className="w-10 h-10 bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center text-white hover:bg-slate-700 shadow-lg">
+                        <Plus className="w-5 h-5" />
+                    </button>
+                    <button className="w-10 h-10 bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center text-white hover:bg-slate-700 shadow-lg">
+                        <div className="w-4 h-0.5 bg-current"></div>
+                    </button>
+                    <button className="w-10 h-10 bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center text-purple-500 hover:bg-slate-700 shadow-lg mt-2">
+                        <Navigation className="w-5 h-5" />
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const FamousNovels: React.FC<{ adaptations: Adaptation[] }> = ({ adaptations }) => {
+    const famous = adaptations.filter(a => a.isFamous);
+    return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <h2 className="text-4xl font-serif font-bold text-white mb-4 text-center">Famous Novels</h2>
+            <p className="text-slate-400 text-center mb-12">The most iconic stories that shaped literature and cinema.</p>
+            
+            <div className="space-y-12">
+                {famous.map((item, idx) => (
+                    <div key={item.id} className={`flex flex-col md:flex-row gap-8 items-center bg-slate-900/50 p-8 rounded-3xl border border-slate-800 ${idx % 2 === 1 ? 'md:flex-row-reverse' : ''}`}>
+                         <div className="w-full md:w-1/3 h-80 shadow-2xl rounded-xl overflow-hidden relative group">
+                             <img src={item.coverUrl} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" alt={item.bookTitle} />
+                             <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all"></div>
+                         </div>
+                         <div className="w-full md:w-2/3">
+                             <h3 className="text-3xl font-bold text-white mb-2">{item.bookTitle}</h3>
+                             <p className="text-purple-400 font-serif italic mb-4">Original Novel by {item.author}</p>
+                             <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 relative">
+                                 <Quote className="w-8 h-8 text-slate-700 absolute -top-4 -left-4 bg-slate-900 rounded-full p-1" />
+                                 <p className="text-slate-300 text-lg font-serif italic text-center">"{item.famousQuote}"</p>
+                             </div>
+                             <div className="mt-6 flex gap-4">
+                                 <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-400 border border-slate-700">{item.genre.join(', ')}</span>
+                                 <span className="px-3 py-1 bg-slate-800 rounded-full text-xs text-slate-400 border border-slate-700">{item.bookReleaseYear || item.releaseYear}</span>
+                             </div>
+                             <div className="mt-6">
+                                <Link to={`/adaptation/${item.id}`} className="text-purple-500 hover:text-white font-bold text-sm flex items-center gap-1 transition-colors">
+                                    See Adaptation Comparison <ArrowRight className="w-4 h-4" />
+                                </Link>
+                             </div>
+                         </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const Admin: React.FC<{
+    adaptations: Adaptation[];
+    authors: Author[];
+    onAddAdaptation: (a: Adaptation) => void;
+    onEditAdaptation: (a: Adaptation) => void;
+    onDeleteAdaptation: (id: string) => void;
+    onAddAuthor: (a: Author) => void;
+    onEditAuthor: (a: Author) => void;
+    onDeleteAuthor: (id: string) => void;
+}> = ({ adaptations, authors, onAddAdaptation, onEditAdaptation, onDeleteAdaptation, onAddAuthor, onEditAuthor, onDeleteAuthor }) => {
+    const [activeTab, setActiveTab] = useState<'adaptations' | 'authors'>('adaptations');
+    const [isEditing, setIsEditing] = useState(false);
+    const [currentItem, setCurrentItem] = useState<any>(null);
+
+    const handleSave = (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        const processedItem = { ...currentItem };
+        
+        if (activeTab === 'adaptations') {
+            if (typeof processedItem.genre === 'string') processedItem.genre = processedItem.genre.split(',').map((s: string) => s.trim());
+            if (typeof processedItem.moods === 'string') processedItem.moods = processedItem.moods.split(',').map((s: string) => s.trim());
+            if (typeof processedItem.cast === 'string') processedItem.cast = processedItem.cast.split(',').map((s: string) => s.trim());
+            
+            if (processedItem.bookRating) processedItem.bookRating = Number(processedItem.bookRating);
+            if (processedItem.movieRating) processedItem.movieRating = Number(processedItem.movieRating);
+
+            if (processedItem.id) {
+                onEditAdaptation(processedItem);
+            } else {
+                onAddAdaptation({ ...processedItem, id: Date.now().toString() });
+            }
+        } else {
+            if (typeof processedItem.notableWorks === 'string') processedItem.notableWorks = processedItem.notableWorks.split(',').map((s: string) => s.trim());
+            
+            if (processedItem.id) {
+                onEditAuthor(processedItem);
+            } else {
+                onAddAuthor({ ...processedItem, id: 'a' + Date.now().toString() });
+            }
+        }
+        
+        setIsEditing(false);
+        setCurrentItem(null);
+    };
+
+    const handleAddNew = () => {
+        setIsEditing(true);
+        if (activeTab === 'adaptations') {
+            setCurrentItem({
+                bookTitle: '', movieTitle: '', author: '', releaseYear: '', genre: [], moods: [],
+                famousQuote: '', comparisonSummary: '', spoilerAnalysis: '', isFamous: false,
+                coverUrl: '', bookDescription: '', targetAudience: '', bookRating: 0, originalLanguage: '', bookReleaseYear: '', readLink: '', buyLink: '',
+                moviePosterUrl: '', movieDescription: '', director: '', cast: [], movieTargetAudience: '', movieRating: 0, trailerUrl: '', ottLink: ''
+            });
+        } else {
+            setCurrentItem({ name: '', bio: '', imageUrl: '', notableWorks: [] });
+        }
+    };
+
+    const handleEdit = (item: any) => {
+        setIsEditing(true);
+        const editableItem = { ...item };
+        if (editableItem.genre) editableItem.genre = editableItem.genre.join(', ');
+        if (editableItem.moods) editableItem.moods = editableItem.moods.join(', ');
+        if (editableItem.cast) editableItem.cast = editableItem.cast.join(', ');
+        if (editableItem.notableWorks) editableItem.notableWorks = editableItem.notableWorks.join(', ');
+        setCurrentItem(editableItem);
+    };
+
+    if (isEditing) {
+        return (
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="bg-slate-900 rounded-2xl border border-slate-800 p-8 shadow-2xl">
+                    <div className="flex justify-between items-center mb-8 border-b border-slate-800 pb-4">
+                        <h2 className="text-2xl font-bold text-white">
+                            {currentItem.id ? 'Edit' : 'Add New'} {activeTab === 'adaptations' ? 'Adaptation' : 'Author'}
+                        </h2>
+                        <button onClick={() => { setIsEditing(false); setCurrentItem(null); }} className="text-slate-400 hover:text-white">
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    <form onSubmit={handleSave} className="space-y-8">
+                        {activeTab === 'adaptations' ? (
+                            <>
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-bold text-purple-400 uppercase tracking-wider border-b border-slate-800 pb-2">General Info</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Book Title</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.bookTitle} onChange={e => setCurrentItem({...currentItem, bookTitle: e.target.value})} required />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Movie Title</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.movieTitle} onChange={e => setCurrentItem({...currentItem, movieTitle: e.target.value})} required />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Author Name</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.author} onChange={e => setCurrentItem({...currentItem, author: e.target.value})} required />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Movie Release Year</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.releaseYear} onChange={e => setCurrentItem({...currentItem, releaseYear: e.target.value})} required />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-slate-400 mb-1">Genres (comma separated)</label>
+                                        <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.genre} onChange={e => setCurrentItem({...currentItem, genre: e.target.value})} placeholder="Sci-Fi, Drama, Action" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-slate-400 mb-1">Famous Quote</label>
+                                        <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.famousQuote} onChange={e => setCurrentItem({...currentItem, famousQuote: e.target.value})} />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Comparison Summary</label>
+                                            <textarea rows={3} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.comparisonSummary} onChange={e => setCurrentItem({...currentItem, comparisonSummary: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Spoiler Analysis</label>
+                                            <textarea rows={3} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.spoilerAnalysis} onChange={e => setCurrentItem({...currentItem, spoilerAnalysis: e.target.value})} />
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input type="checkbox" id="isFamous" checked={currentItem.isFamous || false} onChange={e => setCurrentItem({...currentItem, isFamous: e.target.checked})} className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500 bg-slate-950 border-slate-700" />
+                                        <label htmlFor="isFamous" className="text-white text-sm">Feature in Famous Novels Hall of Fame?</label>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-bold text-purple-400 uppercase tracking-wider border-b border-slate-800 pb-2">Book Details</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Cover URL</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.coverUrl} onChange={e => setCurrentItem({...currentItem, coverUrl: e.target.value})} placeholder="https://..." />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Book Release Year</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.bookReleaseYear} onChange={e => setCurrentItem({...currentItem, bookReleaseYear: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Target Audience</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.targetAudience} onChange={e => setCurrentItem({...currentItem, targetAudience: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Rating (0-5)</label>
+                                            <input type="number" step="0.1" className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.bookRating} onChange={e => setCurrentItem({...currentItem, bookRating: e.target.value})} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-slate-400 mb-1">Book Description</label>
+                                        <textarea rows={3} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.bookDescription} onChange={e => setCurrentItem({...currentItem, bookDescription: e.target.value})} />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Read Link</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.readLink} onChange={e => setCurrentItem({...currentItem, readLink: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Buy Link</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.buyLink} onChange={e => setCurrentItem({...currentItem, buyLink: e.target.value})} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h3 className="text-lg font-bold text-purple-400 uppercase tracking-wider border-b border-slate-800 pb-2">Movie Details</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Poster URL</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.moviePosterUrl} onChange={e => setCurrentItem({...currentItem, moviePosterUrl: e.target.value})} placeholder="https://..." />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Director</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.director} onChange={e => setCurrentItem({...currentItem, director: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Cast (comma separated)</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.cast} onChange={e => setCurrentItem({...currentItem, cast: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Rating (0-5)</label>
+                                            <input type="number" step="0.1" className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.movieRating} onChange={e => setCurrentItem({...currentItem, movieRating: e.target.value})} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-slate-400 mb-1">Movie Description</label>
+                                        <textarea rows={3} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.movieDescription} onChange={e => setCurrentItem({...currentItem, movieDescription: e.target.value})} />
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Trailer URL</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.trailerUrl} onChange={e => setCurrentItem({...currentItem, trailerUrl: e.target.value})} />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">OTT Link</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.ottLink} onChange={e => setCurrentItem({...currentItem, ottLink: e.target.value})} />
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm text-slate-400 mb-1">Author Name</label>
+                                        <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.name} onChange={e => setCurrentItem({...currentItem, name: e.target.value})} required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-slate-400 mb-1">Image URL</label>
+                                        <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.imageUrl} onChange={e => setCurrentItem({...currentItem, imageUrl: e.target.value})} placeholder="https://..." />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-slate-400 mb-1">Bio</label>
+                                    <textarea rows={5} className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.bio} onChange={e => setCurrentItem({...currentItem, bio: e.target.value})} />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-slate-400 mb-1">Notable Works (comma separated)</label>
+                                    <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.notableWorks} onChange={e => setCurrentItem({...currentItem, notableWorks: e.target.value})} />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
+                            <button type="button" onClick={() => { setIsEditing(false); setCurrentItem(null); }} className="px-6 py-3 text-slate-400 hover:text-white font-bold transition-colors">
+                                Cancel
+                            </button>
+                            <button type="submit" className="px-8 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold shadow-lg shadow-purple-900/20 transition-all">
+                                Save Details
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <h2 className="text-4xl font-serif font-bold text-white mb-8">Admin Dashboard</h2>
+            
+            <div className="flex space-x-4 mb-8 border-b border-slate-800 pb-1">
+                <button 
+                    onClick={() => setActiveTab('adaptations')}
+                    className={`pb-3 px-4 text-sm font-bold transition-colors border-b-2 ${activeTab === 'adaptations' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'}`}
+                >
+                    Manage Adaptations
+                </button>
+                <button 
+                    onClick={() => setActiveTab('authors')}
+                    className={`pb-3 px-4 text-sm font-bold transition-colors border-b-2 ${activeTab === 'authors' ? 'border-purple-500 text-purple-400' : 'border-transparent text-slate-400 hover:text-white'}`}
+                >
+                    Manage Authors
+                </button>
+            </div>
+
+            <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+                {activeTab === 'adaptations' && (
+                    <div className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-white">All Adaptations ({adaptations.length})</h3>
+                            <button 
+                                onClick={handleAddNew}
+                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" /> Add Adaptation
+                            </button>
+                        </div>
+                        <div className="space-y-2">
+                            {adaptations.map(item => (
+                                <div key={item.id} className="flex items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <img src={item.moviePosterUrl} alt="" className="w-10 h-14 object-cover rounded bg-slate-900" />
+                                        <div>
+                                            <div className="font-bold text-white">{item.movieTitle}</div>
+                                            <div className="text-xs text-slate-500">Book: {item.bookTitle}</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => handleEdit(item)} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Edit">
+                                            <Edit2 className="w-4 h-4" />
+                                        </button>
+                                        <button 
+                                            onClick={() => onDeleteAdaptation(item.id)}
+                                            className="p-2 text-red-400 hover:bg-red-500/10 rounded transition-colors" 
+                                            title="Delete"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'authors' && (
+                    <div className="p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-xl font-bold text-white">All Authors ({authors.length})</h3>
+                            <button 
+                                onClick={handleAddNew}
+                                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors"
+                            >
+                                <Plus className="w-4 h-4" /> Add Author
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {authors.map(author => (
+                                <div key={author.id} className="flex items-center justify-between bg-slate-950 p-4 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <img src={author.imageUrl} alt="" className="w-12 h-12 object-cover rounded-full bg-slate-900" />
+                                        <div>
+                                            <div className="font-bold text-white">{author.name}</div>
+                                            <div className="text-xs text-slate-500">{author.notableWorks.length} notable works</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => handleEdit(author)} className="p-2 text-blue-400 hover:bg-blue-500/10 rounded transition-colors" title="Edit">
+                                            <Edit2 className="w-4 h-4" />
+                                        </button>
+                                        <button 
+                                            onClick={() => onDeleteAuthor(author.id)}
+                                            className="p-2 text-red-400 hover:bg-red-500/10 rounded transition-colors" 
+                                            title="Delete"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 const Login: React.FC<{ onLogin: (email: string, pass: string) => void }> = ({ onLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -99,12 +854,12 @@ const Profile: React.FC<{
         setIsEditing(false);
     };
 
-    // Calculate Stats
     const stats = useMemo(() => {
         let booksRead = 0, moviesWatched = 0, adaptationsDone = 0;
         let favBooks = 0, favMovies = 0, favAdaptations = 0;
         
-        Object.values(userProgress).forEach(p => {
+        Object.keys(userProgress).forEach(key => {
+            const p = userProgress[key];
             if (p.isBookRead) booksRead++;
             if (p.isMovieWatched) moviesWatched++;
             if (p.isBookRead && p.isMovieWatched) adaptationsDone++;
@@ -115,7 +870,6 @@ const Profile: React.FC<{
         return { booksRead, moviesWatched, adaptationsDone, favBooks, favMovies, favAdaptations };
     }, [userProgress]);
 
-    // User Reviews
     const userReviews = reviews.filter(r => r.userName === user.name);
 
     return (
@@ -140,7 +894,6 @@ const Profile: React.FC<{
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Column - Profile Card */}
                 <div className="lg:col-span-4 space-y-6">
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 text-center sticky top-24">
                         <div className="relative w-32 h-32 mx-auto mb-6 group">
@@ -188,10 +941,7 @@ const Profile: React.FC<{
                     </div>
                 </div>
 
-                {/* Right Column - Stats & Details */}
                 <div className="lg:col-span-8 space-y-8">
-                    
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                         <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
                             <div className="flex items-center gap-3 mb-2">
@@ -237,7 +987,6 @@ const Profile: React.FC<{
                         </div>
                     </div>
 
-                    {/* Personal Info Form */}
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
                         <h3 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">Personal Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -294,7 +1043,6 @@ const Profile: React.FC<{
                         </div>
                     </div>
 
-                     {/* My Reviews */}
                      <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
                          <h3 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2 flex items-center gap-2">
                              <MessageSquare className="w-5 h-5 text-purple-500" /> My Reviews ({userReviews.length})
@@ -319,7 +1067,6 @@ const Profile: React.FC<{
                          )}
                      </div>
 
-                    {/* Genres */}
                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
                         <h3 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">Favorite Genres</h3>
                         <div className="flex flex-wrap gap-3">
@@ -349,829 +1096,6 @@ const Profile: React.FC<{
     );
 };
 
-const Home: React.FC<{ adaptations: Adaptation[]; isLoggedIn: boolean }> = ({ adaptations, isLoggedIn }) => {
-  const comparisonItems = adaptations.filter(item => item.comparisonSummary).slice(0, 3);
-  const featuredItems = adaptations.slice(0, 8);
-  const navigate = useNavigate();
-
-  const handleExploreClick = () => {
-      if (isLoggedIn) {
-          navigate('/adaptations');
-      } else {
-          navigate('/login');
-      }
-  };
-
-  // Generate floating icons data
-  const backgroundIcons = useMemo(() => {
-      const icons = [Film, Clapperboard, Camera, Video, Star, BookOpen, Tv];
-      return Array.from({ length: 15 }).map((_, i) => ({
-          id: i,
-          Icon: icons[Math.floor(Math.random() * icons.length)],
-          left: Math.floor(Math.random() * 95), // 0-95%
-          size: Math.floor(Math.random() * (50 - 20 + 1) + 20), // 20px to 50px
-          duration: Math.floor(Math.random() * (45 - 25 + 1) + 25), // 25s to 45s
-          delay: Math.floor(Math.random() * 20), // 0s to 20s
-          endRotation: Math.floor(Math.random() * 90 - 45) // -45 to 45 degrees
-      }));
-  }, []);
-
-  return (
-    <div className="relative pb-20">
-      {/* Animation Styles */}
-      <style>{`
-        @keyframes float-up {
-            0% {
-                transform: translateY(110%) rotate(0deg) scale(0.8);
-                opacity: 0;
-            }
-            10% {
-                opacity: 0.15;
-            }
-            90% {
-                opacity: 0.15;
-            }
-            100% {
-                transform: translateY(-20%) rotate(var(--tw-rotate-end)) scale(1.1);
-                opacity: 0;
-            }
-        }
-      `}</style>
-
-      {/* Hero Section */}
-      <div className="relative min-h-screen flex items-center justify-center overflow-hidden bg-slate-950">
-        
-        {/* Floating Icons Background Layer */}
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-            {backgroundIcons.map((item) => (
-                <div 
-                    key={item.id}
-                    className="absolute bottom-0 text-slate-500/20"
-                    style={{
-                        left: `${item.left}%`,
-                        width: `${item.size}px`,
-                        height: `${item.size}px`,
-                        animation: `float-up ${item.duration}s linear infinite`,
-                        animationDelay: `-${item.delay}s`,
-                        '--tw-rotate-end': `${item.endRotation}deg`
-                    } as React.CSSProperties}
-                >
-                    <item.Icon strokeWidth={1.5} className="w-full h-full" />
-                </div>
-            ))}
-        </div>
-
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-purple-900/10 rounded-full blur-[100px] z-0"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-900/10 rounded-full blur-[80px] z-0"></div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 text-center">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-serif font-bold text-white mb-6 animate-fade-in-down tracking-tight whitespace-nowrap">
-            Where Stories Meet <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-fuchsia-500 to-purple-600">Screens</span>
-          </h1>
-          <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-3xl mx-auto font-light leading-relaxed">
-            Discover the magic of adaptation where stories unite page and screen. Bringing readers and movie lovers together in one place.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-6">
-            <button 
-                onClick={handleExploreClick}
-                className="bg-purple-600 text-white px-8 py-4 rounded-full font-bold hover:bg-purple-500 transition-all duration-300 shadow-lg shadow-purple-900/30 transform hover:-translate-y-1"
-            >
-              Explore Adaptations
-            </button>
-            <Link 
-                to="/map" 
-                className="bg-transparent border border-slate-600 text-slate-200 px-8 py-4 rounded-full font-bold hover:bg-slate-800 hover:border-slate-500 transition-all duration-300 flex items-center justify-center gap-2"
-            >
-              <MapPin className="w-5 h-5" />
-              Find Nearby Books
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Featured Adaptations Carousel */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 relative z-20 mb-20">
-          <h3 className="text-white font-serif text-2xl mb-6 pl-2 border-l-4 border-purple-500 shadow-black drop-shadow-lg">Featured Adaptations</h3>
-          <div className="flex overflow-x-auto gap-6 pb-8 snap-x hide-scrollbar">
-              {featuredItems.map((item) => (
-                  <div key={item.id} className="snap-start shrink-0 w-48 sm:w-64 group cursor-pointer">
-                      <div className="relative aspect-[2/3] rounded-xl overflow-hidden shadow-2xl border border-slate-800 mb-3 bg-slate-900">
-                           <div className="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-all duration-300 z-20"></div>
-                           <img src={item.moviePosterUrl} alt={item.movieTitle} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500" />
-                           <div className="absolute bottom-2 right-2 bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded shadow z-30">
-                               {item.releaseYear}
-                           </div>
-                      </div>
-                      <h4 className="text-white font-bold truncate group-hover:text-purple-400 transition-colors">{item.movieTitle}</h4>
-                      <p className="text-slate-500 text-sm truncate">{item.author}</p>
-                  </div>
-              ))}
-          </div>
-      </div>
-
-      {/* Navigation Cards */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 mb-20">
-          <div className="text-center mb-12">
-              <h2 className="text-3xl font-serif font-bold text-white">Discover More</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Link to="/authors" className="group bg-slate-900 p-6 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition-all hover:-translate-y-1">
-                  <div className="w-12 h-12 bg-purple-900/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
-                      <Users className="w-6 h-6 text-purple-400 group-hover:text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Explore Authors</h3>
-                  <p className="text-slate-400 text-sm">Meet the masterminds behind the stories.</p>
-              </Link>
-              
-              <Link to="/novels" className="group bg-slate-900 p-6 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition-all hover:-translate-y-1">
-                  <div className="w-12 h-12 bg-purple-900/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
-                      <Star className="w-6 h-6 text-purple-400 group-hover:text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Famous Novels</h3>
-                  <p className="text-slate-400 text-sm">Browse curated lists of legendary books.</p>
-              </Link>
-
-              <Link to="/map" className="group bg-slate-900 p-6 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition-all hover:-translate-y-1">
-                   <div className="w-12 h-12 bg-purple-900/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
-                      <MapPin className="w-6 h-6 text-purple-400 group-hover:text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Sales Near You</h3>
-                  <p className="text-slate-400 text-sm">Find book fairs and markets in your area.</p>
-              </Link>
-
-              <Link to="/reviews" className="group bg-slate-900 p-6 rounded-2xl border border-slate-800 hover:border-purple-500/50 transition-all hover:-translate-y-1">
-                   <div className="w-12 h-12 bg-purple-900/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-purple-600 transition-colors">
-                      <MessageSquare className="w-6 h-6 text-purple-400 group-hover:text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-2">Reviews</h3>
-                  <p className="text-slate-400 text-sm">See what the community is saying.</p>
-              </Link>
-          </div>
-      </div>
-
-      {/* Comparisons Section */}
-      <div className="bg-slate-900/50 py-20 border-y border-slate-800 mb-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-             <div className="text-center mb-16">
-                 <h2 className="text-4xl md:text-5xl font-serif font-bold text-white mb-4">Book vs Movie</h2>
-                 <p className="text-purple-400 text-lg tracking-widest uppercase font-semibold">Which tells it better?</p>
-             </div>
-
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                 {comparisonItems.map((item) => (
-                     <div key={item.id} className="relative bg-slate-950 border border-slate-800 rounded-3xl p-8 hover:border-purple-500/50 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-900/10 group flex flex-col justify-between h-full">
-                         
-                         <div>
-                            <h3 className="text-2xl font-bold text-white mb-6 text-center group-hover:text-purple-300 transition-colors">{item.bookTitle}</h3>
-                            
-                            <div className="bg-slate-900 rounded-2xl p-6 mb-6 border border-slate-800 relative overflow-hidden">
-                                <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-pink-500 to-purple-600"></div>
-                                <p className="text-slate-300 text-lg leading-relaxed italic text-center">
-                                    "{item.comparisonSummary}"
-                                </p>
-                            </div>
-                         </div>
-
-                         <div className="text-center mt-auto">
-                            <Link to={isLoggedIn ? "/adaptations" : "/login"} className="inline-flex items-center gap-2 text-purple-400 text-sm font-bold hover:text-white transition-colors uppercase tracking-wide bg-slate-900 px-6 py-3 rounded-full border border-slate-800 hover:bg-purple-600 hover:border-purple-500">
-                                Full Analysis <ArrowRight className="w-4 h-4" />
-                            </Link>
-                         </div>
-                     </div>
-                 ))}
-             </div>
-        </div>
-      </div>
-
-      {/* About Website Section */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center mb-12">
-          <div className="inline-block p-3 rounded-full bg-slate-800 mb-6">
-              <BookOpen className="w-8 h-8 text-purple-500" />
-          </div>
-          <h2 className="text-3xl font-serif font-bold text-white mb-6">About Book2Screen</h2>
-          <p className="text-lg text-slate-400 leading-relaxed">
-              Book2Screen is your ultimate companion for navigating the intersection of literature and cinema. 
-              We believe that every adaptation is a conversation between mediums. Our platform helps you track what you've read and watched, 
-              compare artistic choices, and discover local literary events. Whether you're a purist who believes "the book was better" 
-              or a cinephile who loves visual storytelling, there's a place for you here.
-          </p>
-      </div>
-    </div>
-  );
-};
-
-// --- Map Page Types & Data ---
-interface MapLocation {
-    id: string;
-    name: string;
-    type: 'Fair' | 'Store' | 'Market' | 'Library';
-    date?: string;
-    description: string;
-    x: number; // Percentage from left
-    y: number; // Percentage from top
-    address: string;
-}
-
-const MOCK_LOCATIONS: MapLocation[] = [
-    { id: '1', name: 'Downtown Literary Fair', type: 'Fair', date: 'Oct 25 - Oct 27', description: 'Annual book fair featuring local authors and rare collectibles.', x: 45, y: 35, address: '120 Main St, City Center' },
-    { id: '2', name: 'The Old Page Shop', type: 'Store', description: 'Vintage bookstore specializing in first editions and classic sci-fi.', x: 25, y: 60, address: '45 Willow Ave, Old Town' },
-    { id: '3', name: 'Riverside Book Market', type: 'Market', date: 'Every Sunday', description: 'Open-air market with second-hand books at bargain prices.', x: 70, y: 55, address: 'River Walk Promenade' },
-    { id: '4', name: 'Central City Library', type: 'Library', description: 'Hosting a "Dune" reading marathon this weekend.', x: 55, y: 20, address: '800 Library Ln' },
-    { id: '5', name: 'West End Comics & Books', type: 'Store', description: 'Huge selection of graphic novels and movie adaptations.', x: 15, y: 40, address: '22 West End Blvd' },
-    { id: '6', name: 'University Scholar Sale', type: 'Fair', date: 'Nov 01', description: 'Academic texts and classic literature clearance sale.', x: 80, y: 30, address: 'University Campus, Hall B' },
-];
-
-const MapPage: React.FC = () => {
-    const [selectedLocation, setSelectedLocation] = useState<MapLocation | null>(null);
-    const [filter, setFilter] = useState<string>('All');
-
-    const filteredLocations = useMemo(() => {
-        return filter === 'All' ? MOCK_LOCATIONS : MOCK_LOCATIONS.filter(l => l.type === filter);
-    }, [filter]);
-
-    const getPinColor = (type: string) => {
-        switch(type) {
-            case 'Fair': return 'text-purple-500';
-            case 'Store': return 'text-blue-500';
-            case 'Market': return 'text-orange-500';
-            case 'Library': return 'text-green-500';
-            default: return 'text-white';
-        }
-    };
-
-    return (
-        <div className="flex flex-col lg:flex-row h-[calc(100vh-4rem)] bg-slate-950 overflow-hidden">
-            {/* Sidebar List */}
-            <div className="w-full lg:w-1/3 bg-slate-900 border-r border-slate-800 flex flex-col z-20 shadow-2xl">
-                <div className="p-6 border-b border-slate-800">
-                    <h2 className="text-2xl font-serif font-bold text-white mb-2">Book Sales & Events</h2>
-                    <p className="text-slate-400 text-sm mb-6">Discover literary happenings near you.</p>
-                    
-                    {/* Filters */}
-                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
-                        {['All', 'Fair', 'Store', 'Market', 'Library'].map(f => (
-                            <button 
-                                key={f}
-                                onClick={() => setFilter(f)}
-                                className={`px-3 py-1 rounded-full text-xs font-bold transition-colors whitespace-nowrap ${filter === f ? 'bg-purple-600 text-white' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:text-white'}`}
-                            >
-                                {f}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-                
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {filteredLocations.map(loc => (
-                        <div 
-                            key={loc.id}
-                            onClick={() => setSelectedLocation(loc)}
-                            className={`p-4 rounded-xl border transition-all cursor-pointer group ${selectedLocation?.id === loc.id ? 'bg-purple-900/20 border-purple-500' : 'bg-slate-950 border-slate-800 hover:border-slate-600'}`}
-                        >
-                            <div className="flex justify-between items-start mb-1">
-                                <h4 className={`font-bold ${selectedLocation?.id === loc.id ? 'text-purple-400' : 'text-white group-hover:text-purple-400'}`}>{loc.name}</h4>
-                                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-900 ${getPinColor(loc.type)}`}>{loc.type}</span>
-                            </div>
-                            <p className="text-slate-400 text-xs mb-2 line-clamp-2">{loc.description}</p>
-                            <div className="flex items-center gap-2 text-slate-500 text-xs">
-                                <MapPin className="w-3 h-3" /> {loc.address}
-                            </div>
-                            {loc.date && (
-                                <div className="mt-2 text-xs text-green-400 font-bold flex items-center gap-1">
-                                    <Calendar className="w-3 h-3" /> {loc.date}
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Interactive Map Area */}
-            <div className="relative flex-1 bg-slate-950 overflow-hidden">
-                {/* Map Background (Simulated Dark Map) */}
-                <div 
-                    className="absolute inset-0 w-full h-full bg-slate-900 opacity-50"
-                    style={{
-                        backgroundImage: `radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0)`,
-                        backgroundSize: '40px 40px',
-                    }}
-                ></div>
-                {/* Roads/River Decoration (CSS Shapes) */}
-                <div className="absolute top-0 left-1/3 w-20 h-full bg-slate-800/30 skew-x-12 blur-sm"></div>
-                <div className="absolute top-1/2 left-0 w-full h-16 bg-slate-800/30 -skew-y-6 blur-sm"></div>
-                
-                {/* Pins */}
-                {filteredLocations.map(loc => (
-                    <div 
-                        key={loc.id}
-                        className="absolute cursor-pointer group z-10 transition-all duration-300"
-                        style={{ top: `${loc.y}%`, left: `${loc.x}%`, transform: 'translate(-50%, -100%)' }}
-                        onClick={(e) => { e.stopPropagation(); setSelectedLocation(loc); }}
-                    >
-                        <div className={`relative ${selectedLocation?.id === loc.id ? 'scale-125' : 'group-hover:scale-110'} transition-transform duration-300`}>
-                            <MapPin className={`w-10 h-10 ${getPinColor(loc.type)} fill-slate-900`} strokeWidth={2} />
-                            {selectedLocation?.id === loc.id && (
-                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3 h-1 bg-black/50 blur-sm rounded-full"></div>
-                            )}
-                        </div>
-                        <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none">
-                            {loc.name}
-                        </div>
-                    </div>
-                ))}
-
-                {/* Detail Popover (Mobile/Desktop Overlay) */}
-                {selectedLocation && (
-                    <div className="absolute bottom-6 left-6 right-6 lg:left-auto lg:right-6 lg:w-80 bg-slate-900/95 backdrop-blur-xl border border-slate-700 rounded-2xl p-6 shadow-2xl z-30 animate-fade-in-up">
-                        <button 
-                            onClick={() => setSelectedLocation(null)}
-                            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                        
-                        <div className="flex items-center gap-2 mb-1">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded bg-slate-800 uppercase ${getPinColor(selectedLocation.type)}`}>
-                                {selectedLocation.type}
-                            </span>
-                            {selectedLocation.date && (
-                                <span className="text-xs text-green-400 font-bold flex items-center gap-1">
-                                    <Clock className="w-3 h-3" /> {selectedLocation.date}
-                                </span>
-                            )}
-                        </div>
-                        
-                        <h3 className="text-xl font-bold text-white mb-2 pr-6">{selectedLocation.name}</h3>
-                        <p className="text-slate-300 text-sm mb-4 leading-relaxed">{selectedLocation.description}</p>
-                        
-                        <div className="space-y-3 mb-6">
-                            <div className="flex items-start gap-3 text-sm text-slate-400">
-                                <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                                <span>{selectedLocation.address}</span>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                            <button className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg text-sm font-bold transition-colors">
-                                <Navigation className="w-4 h-4" /> Directions
-                            </button>
-                            <button className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-lg text-sm font-bold transition-colors border border-slate-700">
-                                <ExternalLink className="w-4 h-4" /> Details
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                {/* Map Controls (Visual Only) */}
-                <div className="absolute bottom-6 right-6 lg:right-auto lg:left-6 flex flex-col gap-2">
-                    <button className="w-10 h-10 bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center text-white hover:bg-slate-700 shadow-lg">
-                        <Plus className="w-5 h-5" />
-                    </button>
-                    <button className="w-10 h-10 bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center text-white hover:bg-slate-700 shadow-lg">
-                        <div className="w-4 h-0.5 bg-current"></div>
-                    </button>
-                    <button className="w-10 h-10 bg-slate-800 border border-slate-700 rounded-lg flex items-center justify-center text-purple-500 hover:bg-slate-700 shadow-lg mt-2">
-                        <Navigation className="w-5 h-5" />
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const FamousNovels: React.FC<{ adaptations: Adaptation[] }> = ({ adaptations }) => {
-    // Only show adaptations flagged as famous
-    const famousNovels = adaptations.filter(item => item.isFamous);
-
-    return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="text-center mb-12">
-                <h2 className="text-4xl font-serif font-bold text-white mb-4">Legendary Novels</h2>
-                <p className="text-slate-400">The timeless stories that started it all.</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {famousNovels.map((item) => (
-                    <div key={item.id} className="bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 hover:border-purple-500/50 transition-all group flex flex-col h-full shadow-lg hover:shadow-purple-900/10">
-                         {/* Cover Area */}
-                         <div className="h-72 overflow-hidden relative bg-slate-950">
-                             <img src={item.coverUrl} alt={item.bookTitle} className="w-full h-full object-cover opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" />
-                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent"></div>
-                             
-                             <div className="absolute bottom-4 left-4 right-4 translate-y-2 group-hover:translate-y-0 transition-transform">
-                                 <h3 className="text-2xl font-bold text-white leading-tight mb-1">{item.bookTitle}</h3>
-                                 <p className="text-purple-400 font-medium text-sm flex items-center gap-1">
-                                     <Edit2 className="w-3 h-3" /> {item.author}
-                                 </p>
-                             </div>
-                         </div>
-                         
-                         {/* Content */}
-                         <div className="p-6 flex flex-col flex-grow">
-                             <div className="mb-4 relative pl-4 border-l-2 border-purple-500/30">
-                                 <Quote className="w-4 h-4 text-purple-500 absolute -left-3 -top-2 bg-slate-900" />
-                                 <p className="text-slate-300 italic text-sm leading-relaxed">
-                                     "{item.famousQuote}"
-                                 </p>
-                             </div>
-                             
-                             <div className="flex flex-wrap gap-2 mb-6">
-                                 {item.genre.slice(0, 3).map(g => (
-                                     <span key={g} className="text-xs bg-slate-800 text-slate-400 px-2 py-1 rounded border border-slate-700">{g}</span>
-                                 ))}
-                             </div>
-
-                             <div className="mt-auto pt-4 border-t border-slate-800">
-                                <Link 
-                                    to={`/adaptation/${item.id}`} 
-                                    className="flex items-center justify-between text-sm font-bold text-white hover:text-purple-400 transition-colors"
-                                >
-                                    View Adaptation Details <ArrowRight className="w-4 h-4" />
-                                </Link>
-                             </div>
-                         </div>
-                    </div>
-                ))}
-                {famousNovels.length === 0 && (
-                    <div className="col-span-full text-center py-20">
-                        <Book className="w-12 h-12 text-slate-700 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-white mb-2">No Famous Novels Featured</h3>
-                        <p className="text-slate-400">Mark adaptations as 'Famous' in the Admin panel to see them here.</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-const Admin: React.FC<{ 
-    adaptations: Adaptation[], 
-    authors: Author[],
-    onAddAdaptation: (a: Adaptation) => void,
-    onEditAdaptation: (a: Adaptation) => void,
-    onDeleteAdaptation: (id: string) => void,
-    onAddAuthor: (a: Author) => void,
-    onEditAuthor: (a: Author) => void,
-    onDeleteAuthor: (id: string) => void
-}> = ({ 
-    adaptations, authors, 
-    onAddAdaptation, onEditAdaptation, onDeleteAdaptation,
-    onAddAuthor, onEditAuthor, onDeleteAuthor 
-}) => {
-    const [activeTab, setActiveTab] = useState<'adaptations' | 'authors'>('adaptations');
-    
-    // Adaptation State
-    const [editingAdaptationId, setEditingAdaptationId] = useState<string | null>(null);
-    const [adaptationForm, setAdaptationForm] = useState<Partial<Adaptation>>({
-        bookTitle: '', movieTitle: '', author: '', releaseYear: '', 
-        famousQuote: '', coverUrl: 'https://picsum.photos/300/450', moviePosterUrl: 'https://picsum.photos/300/450',
-        genre: [], moods: [], cast: [],
-        comparisonSummary: '', spoilerAnalysis: '',
-        bookDescription: '', targetAudience: '', bookRating: 5, originalLanguage: '', bookReleaseYear: '', readLink: '', buyLink: '',
-        movieDescription: '', director: '', movieTargetAudience: '', movieRating: 5, trailerUrl: '', ottLink: '',
-        isFamous: false
-    });
-
-    // Author State
-    const [editingAuthorId, setEditingAuthorId] = useState<string | null>(null);
-    const [authorForm, setAuthorForm] = useState<Partial<Author>>({
-        name: '', bio: '', imageUrl: 'https://picsum.photos/200/200', notableWorks: []
-    });
-
-    // Helper
-    const handleArrayInput = (
-        setter: React.Dispatch<React.SetStateAction<any>>, 
-        field: string, 
-        value: string
-    ) => {
-        setter((prev: any) => ({ ...prev, [field]: value.split(',').map(s => s.trim()) }));
-    };
-
-    // --- Adaptation Handlers ---
-    const startEditingAdaptation = (adaptation: Adaptation) => {
-        setEditingAdaptationId(adaptation.id);
-        setAdaptationForm(adaptation);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const cancelEditingAdaptation = () => {
-        setEditingAdaptationId(null);
-        setAdaptationForm({
-             bookTitle: '', movieTitle: '', author: '', releaseYear: '', 
-            famousQuote: '', coverUrl: 'https://picsum.photos/300/450', moviePosterUrl: 'https://picsum.photos/300/450',
-            genre: [], moods: [], cast: [],
-            comparisonSummary: '', spoilerAnalysis: '',
-            bookDescription: '', targetAudience: '', bookRating: 5, originalLanguage: '', bookReleaseYear: '', readLink: '', buyLink: '',
-            movieDescription: '', director: '', movieTargetAudience: '', movieRating: 5, trailerUrl: '', ottLink: '',
-            isFamous: false
-        });
-    };
-
-    const handleAdaptationSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const newAdaptation: Adaptation = {
-            id: editingAdaptationId || Date.now().toString(),
-            // ... (rest of properties, ensuring defaults)
-            bookTitle: adaptationForm.bookTitle || '',
-            movieTitle: adaptationForm.movieTitle || '',
-            author: adaptationForm.author || '',
-            releaseYear: adaptationForm.releaseYear || '',
-            genre: adaptationForm.genre || [],
-            moods: adaptationForm.moods || [],
-            famousQuote: adaptationForm.famousQuote || '',
-            comparisonSummary: adaptationForm.comparisonSummary || '',
-            spoilerAnalysis: adaptationForm.spoilerAnalysis || '',
-            coverUrl: adaptationForm.coverUrl || 'https://picsum.photos/300/450',
-            bookDescription: adaptationForm.bookDescription || '',
-            targetAudience: adaptationForm.targetAudience || '',
-            bookRating: Number(adaptationForm.bookRating) || 0,
-            originalLanguage: adaptationForm.originalLanguage || '',
-            bookReleaseYear: adaptationForm.bookReleaseYear || '',
-            readLink: adaptationForm.readLink || '',
-            buyLink: adaptationForm.buyLink || '',
-            moviePosterUrl: adaptationForm.moviePosterUrl || 'https://picsum.photos/300/450',
-            movieDescription: adaptationForm.movieDescription || '',
-            director: adaptationForm.director || '',
-            cast: adaptationForm.cast || [],
-            movieTargetAudience: adaptationForm.movieTargetAudience || '',
-            movieRating: Number(adaptationForm.movieRating) || 0,
-            trailerUrl: adaptationForm.trailerUrl || '',
-            ottLink: adaptationForm.ottLink || '',
-            isFamous: adaptationForm.isFamous || false
-        };
-
-        if (editingAdaptationId) {
-            onEditAdaptation(newAdaptation);
-        } else {
-            onAddAdaptation(newAdaptation);
-        }
-        cancelEditingAdaptation();
-    };
-
-    // --- Author Handlers ---
-    const startEditingAuthor = (author: Author) => {
-        setEditingAuthorId(author.id);
-        setAuthorForm(author);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const cancelEditingAuthor = () => {
-        setEditingAuthorId(null);
-        setAuthorForm({ name: '', bio: '', imageUrl: 'https://picsum.photos/200/200', notableWorks: [] });
-    };
-
-    const handleAuthorSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const newAuthor: Author = {
-            id: editingAuthorId || Date.now().toString(),
-            name: authorForm.name || '',
-            bio: authorForm.bio || '',
-            imageUrl: authorForm.imageUrl || 'https://picsum.photos/200/200',
-            notableWorks: authorForm.notableWorks || []
-        };
-
-        if (editingAuthorId) {
-            onEditAuthor(newAuthor);
-        } else {
-            onAddAuthor(newAuthor);
-        }
-        cancelEditingAuthor();
-    };
-
-    return (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                <h2 className="text-3xl font-serif font-bold text-white">Admin Dashboard</h2>
-                
-                {/* Tabs */}
-                <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
-                    <button 
-                        onClick={() => setActiveTab('adaptations')}
-                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'adaptations' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                    >
-                        Adaptations & Novels
-                    </button>
-                    <button 
-                        onClick={() => setActiveTab('authors')}
-                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'authors' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
-                    >
-                        Authors
-                    </button>
-                </div>
-            </div>
-            
-            {/* --- ADAPTATIONS TAB --- */}
-            {activeTab === 'adaptations' && (
-                <>
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 mb-12 shadow-xl">
-                        <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                            <h3 className="text-xl font-bold text-white">
-                                {editingAdaptationId ? 'Edit Adaptation' : 'Add New Adaptation'}
-                            </h3>
-                            {editingAdaptationId && (
-                                <button onClick={cancelEditingAdaptation} className="text-slate-400 hover:text-white flex items-center gap-1">
-                                    <X className="w-4 h-4" /> Cancel
-                                </button>
-                            )}
-                        </div>
-
-                        <form onSubmit={handleAdaptationSubmit} className="space-y-8">
-                            {/* Shared Info */}
-                            <div className="space-y-4">
-                                <h4 className="text-sm font-bold text-purple-400 uppercase tracking-wider">Shared Information</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <input placeholder="Book Title *" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.bookTitle} onChange={e => setAdaptationForm({...adaptationForm, bookTitle: e.target.value})} required />
-                                    <input placeholder="Movie Title *" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.movieTitle} onChange={e => setAdaptationForm({...adaptationForm, movieTitle: e.target.value})} required />
-                                    <input placeholder="Author" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.author} onChange={e => setAdaptationForm({...adaptationForm, author: e.target.value})} />
-                                    <input placeholder="Movie Release Year" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.releaseYear} onChange={e => setAdaptationForm({...adaptationForm, releaseYear: e.target.value})} />
-                                    <input placeholder="Genre (comma separated)" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.genre?.join(', ')} onChange={e => handleArrayInput(setAdaptationForm, 'genre', e.target.value)} />
-                                    <input placeholder="Moods (comma separated)" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.moods?.join(', ')} onChange={e => handleArrayInput(setAdaptationForm, 'moods', e.target.value)} />
-                                </div>
-                                <input placeholder="Famous Quote" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.famousQuote} onChange={e => setAdaptationForm({...adaptationForm, famousQuote: e.target.value})} />
-                                <textarea rows={2} placeholder="Comparison Summary (Spoiler Free)" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.comparisonSummary} onChange={e => setAdaptationForm({...adaptationForm, comparisonSummary: e.target.value})} />
-                                <textarea rows={2} placeholder="Spoiler Analysis (Ending changes etc.)" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.spoilerAnalysis} onChange={e => setAdaptationForm({...adaptationForm, spoilerAnalysis: e.target.value})} />
-                                
-                                <div className="flex items-center gap-3 p-4 bg-slate-800/50 rounded-lg border border-slate-700">
-                                    <input 
-                                        type="checkbox" 
-                                        id="isFamous" 
-                                        checked={adaptationForm.isFamous || false} 
-                                        onChange={(e) => setAdaptationForm({ ...adaptationForm, isFamous: e.target.checked })}
-                                        className="w-5 h-5 accent-purple-600 rounded cursor-pointer"
-                                    />
-                                    <label htmlFor="isFamous" className="text-white font-bold text-sm cursor-pointer select-none">
-                                        Feature in "Famous Novels" Page
-                                    </label>
-                                </div>
-                            </div>
-
-                            {/* Book Specifics */}
-                            <div className="space-y-4 pt-4 border-t border-slate-800">
-                                <h4 className="text-sm font-bold text-purple-400 uppercase tracking-wider">Book Specifics (Famous Novels)</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <input placeholder="Book Cover URL" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.coverUrl} onChange={e => setAdaptationForm({...adaptationForm, coverUrl: e.target.value})} />
-                                    <input placeholder="Book Release Year" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.bookReleaseYear} onChange={e => setAdaptationForm({...adaptationForm, bookReleaseYear: e.target.value})} />
-                                    <input placeholder="Original Language" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.originalLanguage} onChange={e => setAdaptationForm({...adaptationForm, originalLanguage: e.target.value})} />
-                                    <input placeholder="Target Audience (Readers)" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.targetAudience} onChange={e => setAdaptationForm({...adaptationForm, targetAudience: e.target.value})} />
-                                    <input type="number" placeholder="Book Rating (1-5)" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.bookRating} onChange={e => setAdaptationForm({...adaptationForm, bookRating: parseFloat(e.target.value)})} />
-                                    <input placeholder="Read Link" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.readLink} onChange={e => setAdaptationForm({...adaptationForm, readLink: e.target.value})} />
-                                    <input placeholder="Buy Link" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.buyLink} onChange={e => setAdaptationForm({...adaptationForm, buyLink: e.target.value})} />
-                                </div>
-                                <textarea rows={2} placeholder="Book Description" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.bookDescription} onChange={e => setAdaptationForm({...adaptationForm, bookDescription: e.target.value})} />
-                            </div>
-
-                            {/* Movie Specifics */}
-                            <div className="space-y-4 pt-4 border-t border-slate-800">
-                                <h4 className="text-sm font-bold text-purple-400 uppercase tracking-wider">Movie Specifics</h4>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    <input placeholder="Movie Poster URL" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.moviePosterUrl} onChange={e => setAdaptationForm({...adaptationForm, moviePosterUrl: e.target.value})} />
-                                    <input placeholder="Director" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.director} onChange={e => setAdaptationForm({...adaptationForm, director: e.target.value})} />
-                                    <input placeholder="Cast (comma separated)" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.cast?.join(', ')} onChange={e => handleArrayInput(setAdaptationForm, 'cast', e.target.value)} />
-                                    <input placeholder="Movie Target Audience (Views)" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.movieTargetAudience} onChange={e => setAdaptationForm({...adaptationForm, movieTargetAudience: e.target.value})} />
-                                    <input type="number" placeholder="Movie Rating (1-5)" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.movieRating} onChange={e => setAdaptationForm({...adaptationForm, movieRating: parseFloat(e.target.value)})} />
-                                    <input placeholder="Trailer URL" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.trailerUrl} onChange={e => setAdaptationForm({...adaptationForm, trailerUrl: e.target.value})} />
-                                    <input placeholder="OTT Link" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.ottLink} onChange={e => setAdaptationForm({...adaptationForm, ottLink: e.target.value})} />
-                                </div>
-                                <textarea rows={2} placeholder="Movie Description" className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" value={adaptationForm.movieDescription} onChange={e => setAdaptationForm({...adaptationForm, movieDescription: e.target.value})} />
-                            </div>
-
-                            <button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl transition-all text-lg shadow-lg">
-                                {editingAdaptationId ? 'Update Adaptation' : 'Add Adaptation'}
-                            </button>
-                        </form>
-                    </div>
-
-                    <div>
-                        <h3 className="text-2xl font-bold text-white mb-6">Manage Library</h3>
-                        <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden">
-                            {adaptations.map((item, index) => (
-                                <div key={item.id} className={`p-4 flex items-center justify-between hover:bg-slate-800 transition-colors ${index !== adaptations.length - 1 ? 'border-b border-slate-800' : ''}`}>
-                                    <div className="flex items-center gap-4">
-                                        <img src={item.coverUrl} className="w-10 h-16 object-cover rounded" alt={item.bookTitle} />
-                                        <div>
-                                            <h4 className="font-bold text-white flex items-center gap-2">
-                                                {item.movieTitle}
-                                                {item.isFamous && <Star className="w-3 h-3 text-yellow-500 fill-current" />}
-                                            </h4>
-                                            <p className="text-slate-400 text-sm">{item.author} | {item.releaseYear}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button 
-                                            onClick={() => startEditingAdaptation(item)}
-                                            className="p-2 bg-slate-700 text-white rounded-lg hover:bg-purple-600 transition-colors" title="Edit"
-                                        >
-                                            <Edit2 className="w-4 h-4" />
-                                        </button>
-                                        <button 
-                                            onClick={() => { if(window.confirm('Delete this adaptation?')) onDeleteAdaptation(item.id); }}
-                                            className="p-2 bg-slate-700 text-red-400 rounded-lg hover:bg-red-900/50 hover:text-red-300 transition-colors" title="Delete"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                            {adaptations.length === 0 && (
-                                <div className="p-8 text-center text-slate-500">No adaptations found.</div>
-                            )}
-                        </div>
-                    </div>
-                </>
-            )}
-
-            {/* --- AUTHORS TAB --- */}
-            {activeTab === 'authors' && (
-                <>
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 mb-12 shadow-xl">
-                        <div className="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                            <h3 className="text-xl font-bold text-white">
-                                {editingAuthorId ? 'Edit Author' : 'Add New Author'}
-                            </h3>
-                            {editingAuthorId && (
-                                <button onClick={cancelEditingAuthor} className="text-slate-400 hover:text-white flex items-center gap-1">
-                                    <X className="w-4 h-4" /> Cancel
-                                </button>
-                            )}
-                        </div>
-
-                        <form onSubmit={handleAuthorSubmit} className="space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <input 
-                                    placeholder="Author Name *" 
-                                    className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" 
-                                    value={authorForm.name} 
-                                    onChange={e => setAuthorForm({...authorForm, name: e.target.value})} 
-                                    required 
-                                />
-                                <input 
-                                    placeholder="Photo URL" 
-                                    className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" 
-                                    value={authorForm.imageUrl} 
-                                    onChange={e => setAuthorForm({...authorForm, imageUrl: e.target.value})} 
-                                />
-                            </div>
-                            <input 
-                                placeholder="Notable Works (comma separated)" 
-                                className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" 
-                                value={authorForm.notableWorks?.join(', ')} 
-                                onChange={e => handleArrayInput(setAuthorForm, 'notableWorks', e.target.value)} 
-                            />
-                            <textarea 
-                                rows={4} 
-                                placeholder="Short Biography" 
-                                className="bg-slate-800 border-slate-700 rounded-lg p-3 text-white w-full" 
-                                value={authorForm.bio} 
-                                onChange={e => setAuthorForm({...authorForm, bio: e.target.value})} 
-                            />
-                            
-                            <button type="submit" className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-xl transition-all text-lg shadow-lg">
-                                {editingAuthorId ? 'Update Author' : 'Add Author'}
-                            </button>
-                        </form>
-                    </div>
-
-                    <div>
-                        <h3 className="text-2xl font-bold text-white mb-6">Manage Authors</h3>
-                        <div className="bg-slate-900 rounded-3xl border border-slate-800 overflow-hidden">
-                            {authors.map((author, index) => (
-                                <div key={author.id} className={`p-4 flex items-center justify-between hover:bg-slate-800 transition-colors ${index !== authors.length - 1 ? 'border-b border-slate-800' : ''}`}>
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-700">
-                                            <img src={author.imageUrl} className="w-full h-full object-cover" alt={author.name} />
-                                        </div>
-                                        <div>
-                                            <h4 className="font-bold text-white">{author.name}</h4>
-                                            <p className="text-slate-400 text-xs truncate max-w-xs">{author.bio}</p>
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-2">
-                                        <button 
-                                            onClick={() => startEditingAuthor(author)}
-                                            className="p-2 bg-slate-700 text-white rounded-lg hover:bg-purple-600 transition-colors" title="Edit"
-                                        >
-                                            <Edit2 className="w-4 h-4" />
-                                        </button>
-                                        <button 
-                                            onClick={() => { if(window.confirm('Delete this author?')) onDeleteAuthor(author.id); }}
-                                            className="p-2 bg-slate-700 text-red-400 rounded-lg hover:bg-red-900/50 hover:text-red-300 transition-colors" title="Delete"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                            {authors.length === 0 && (
-                                <div className="p-8 text-center text-slate-500">No authors found. Add one above!</div>
-                            )}
-                        </div>
-                    </div>
-                </>
-            )}
-        </div>
-    );
-};
-
 const AdaptationList: React.FC<{ 
     adaptations: Adaptation[]; 
     progress: UserProgress;
@@ -1194,7 +1118,6 @@ const AdaptationList: React.FC<{
         
         const matchesGenre = selectedGenre === 'All' || item.genre.includes(selectedGenre);
 
-        // Hide if BOTH book is read AND movie is watched, unless showCompleted is true
         const isDone = progress[item.id]?.isBookRead && progress[item.id]?.isMovieWatched;
         const matchesCompletion = showCompleted ? true : !isDone;
 
@@ -1209,10 +1132,8 @@ const AdaptationList: React.FC<{
           <p className="text-slate-400">Discover and track your journey from page to screen.</p>
       </div>
 
-      {/* Search and Filter Section */}
       <div className="sticky top-20 z-40 bg-slate-950/90 backdrop-blur-md py-4 mb-8 -mx-4 px-4 border-b border-slate-800/50">
           <div className="max-w-4xl mx-auto space-y-4">
-              {/* Search Bar */}
               <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                       <Search className="h-5 w-5 text-slate-400" />
@@ -1227,7 +1148,6 @@ const AdaptationList: React.FC<{
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-4">
-                  {/* Genre Filters */}
                   <div className="flex overflow-x-auto pb-2 gap-2 hide-scrollbar flex-1">
                       {genres.map(genre => (
                           <button
@@ -1244,7 +1164,6 @@ const AdaptationList: React.FC<{
                       ))}
                   </div>
                   
-                  {/* Toggle Completed */}
                   <button 
                     onClick={() => setShowCompleted(!showCompleted)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border transition-colors ${
@@ -1260,50 +1179,44 @@ const AdaptationList: React.FC<{
           </div>
       </div>
 
-      {/* Cards Grid - 4 Columns on Large Screens */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {filteredAdaptations.map((item) => (
           <div key={item.id} className="group bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-xl transition-all duration-300 hover:shadow-2xl hover:shadow-purple-900/10 hover:-translate-y-1 relative flex flex-col">
-             {/* Card Images - Split View Vertical */}
              <div 
-                className="aspect-[2/3] relative flex cursor-pointer"
+                className="aspect-[2/3] relative flex cursor-pointer bg-slate-950 overflow-hidden"
                 onClick={() => navigate(`/adaptation/${item.id}`)}
              >
-                {/* Book Cover (Left Half) */}
-                <div className="w-1/2 h-full relative border-r border-slate-900/50 overflow-hidden">
+                <div className="w-1/2 h-full relative border-r border-slate-900/30">
                     <img 
                         src={item.coverUrl} 
                         alt="Book Cover" 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                        className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" 
                     />
-                     <div className="absolute top-0 left-0 w-full h-full bg-black/20 group-hover:bg-transparent transition-all"></div>
-                     <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded border border-white/10 z-10">
+                    <div className="absolute top-0 left-0 w-full h-full bg-black/10 transition-all"></div>
+                    <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded border border-white/10 shadow-sm">
                         BOOK
                     </div>
                 </div>
 
-                {/* Movie Poster (Right Half) */}
-                <div className="w-1/2 h-full relative overflow-hidden">
+                <div className="w-1/2 h-full relative">
                      <img 
                         src={item.moviePosterUrl} 
                         alt="Movie Poster" 
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
+                        className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-110" 
                     />
-                    <div className="absolute top-0 left-0 w-full h-full bg-black/20 group-hover:bg-transparent transition-all"></div>
-                    <div className="absolute bottom-2 right-2 bg-purple-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded border border-white/10 z-10">
+                    <div className="absolute top-0 left-0 w-full h-full bg-black/10 transition-all"></div>
+                    <div className="absolute bottom-2 right-2 bg-purple-600/90 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded border border-white/10 shadow-sm">
                         MOVIE
                     </div>
                 </div>
 
-                {/* Shared Overlay Info */}
-                <div className="absolute bottom-10 left-0 w-full flex justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity">
-                     <span className="inline-block px-3 py-1 bg-slate-900/90 text-white text-xs rounded-full border border-slate-700">
+                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                     <span className="inline-block px-3 py-1 bg-slate-900/95 text-white text-xs font-bold rounded-full border border-slate-700 shadow-xl whitespace-nowrap">
                         {item.releaseYear}
                     </span>
                 </div>
              </div>
 
-             {/* Card Content */}
              <div className="p-5 flex-grow flex flex-col">
                 <div className="cursor-pointer" onClick={() => navigate(`/adaptation/${item.id}`)}>
                     <h3 className="text-xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors line-clamp-1" title={item.movieTitle}>
@@ -1323,7 +1236,6 @@ const AdaptationList: React.FC<{
                     </div>
                 </div>
 
-                {/* Actions */}
                 <div className="mt-auto pt-4 border-t border-slate-800 flex items-center justify-between">
                     <button 
                         onClick={(e) => { e.stopPropagation(); onToggleFavorite(item.id, 'adaptation'); }}
@@ -1405,7 +1317,6 @@ const AdaptationDetails: React.FC<{
                     <ChevronLeft className="w-5 h-5" /> Back to Library
                 </button>
 
-                {/* SECTION A: HEADER */}
                 <div className="text-left border-b border-slate-800 pb-8">
                     <div className="flex justify-between items-start">
                         <div>
@@ -1435,7 +1346,6 @@ const AdaptationDetails: React.FC<{
                     </div>
                 </div>
 
-                {/* SECTION B: BOOK SECTION */}
                 <section>
                     <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
                         <Book className="w-6 h-6 text-purple-500" /> The Book
@@ -1484,7 +1394,6 @@ const AdaptationDetails: React.FC<{
                     </div>
                 </section>
 
-                {/* SECTION C: MOVIE SECTION */}
                 <section>
                     <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
                         <Film className="w-6 h-6 text-pink-500" /> The Movie
@@ -1582,7 +1491,6 @@ const AdaptationDetails: React.FC<{
                     </div>
                 </section>
 
-                {/* Recommendations */}
                 <section>
                     <h2 className="text-2xl font-bold text-white mb-6">Recommendations</h2>
                     <div className="mb-8">
@@ -1659,7 +1567,6 @@ const FavouritesPage: React.FC<{ adaptations: Adaptation[]; progress: UserProgre
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <h2 className="text-4xl font-serif font-bold text-white mb-12 text-center">Your Favorites Collection</h2>
 
-            {/* Favorite Books */}
             <div className="mb-16">
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 border-b border-slate-800 pb-3">
                     <Book className="w-6 h-6 text-purple-500" /> Favourite Books
@@ -1687,7 +1594,6 @@ const FavouritesPage: React.FC<{ adaptations: Adaptation[]; progress: UserProgre
                 ) : <p className="text-slate-500 italic">No favorite books added yet.</p>}
             </div>
 
-            {/* Favorite Movies */}
             <div className="mb-16">
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 border-b border-slate-800 pb-3">
                     <Film className="w-6 h-6 text-pink-500" /> Favourite Movies
@@ -1715,7 +1621,6 @@ const FavouritesPage: React.FC<{ adaptations: Adaptation[]; progress: UserProgre
                 ) : <p className="text-slate-500 italic">No favorite movies added yet.</p>}
             </div>
 
-            {/* Favorite Adaptations */}
             <div>
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 border-b border-slate-800 pb-3">
                     <Star className="w-6 h-6 text-yellow-500" /> Favourite Adaptations
@@ -1760,7 +1665,6 @@ const DonePage: React.FC<{
     onToggleWatched: (id: string) => void;
 }> = ({ adaptations, progress, onToggleRead, onToggleWatched }) => {
     
-    // Filter items where at least one part is done
     const doneItems = adaptations.filter(a => progress[a.id]?.isBookRead || progress[a.id]?.isMovieWatched);
 
     return (
@@ -1820,7 +1724,6 @@ const DonePage: React.FC<{
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <span className="text-yellow-500 text-sm font-bold">
-                                                {/* Placeholder for user specific rating if implemented */}
                                                 -
                                             </span>
                                         </td>
@@ -1987,14 +1890,11 @@ const App: React.FC = () => {
   const [authors, setAuthors] = useState<Author[]>(INITIAL_AUTHORS);
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  
-  // New unified state for user interactions (Fav/Read/Watched)
   const [userProgress, setUserProgress] = useState<UserProgress>({});
 
   const isLoggedIn = currentUser !== null;
   const isAdmin = currentUser?.role === 'admin';
 
-  // Helper to toggle specific flags
   const toggleProgress = (id: string, field: keyof UserProgress[string]) => {
       setUserProgress(prev => {
           const current = prev[id] || {};
@@ -2019,11 +1919,9 @@ const App: React.FC = () => {
   };
 
   const handleToggleWatched = (id: string) => {
-      // Toggle movie watched
       toggleProgress(id, 'isMovieWatched');
   };
 
-  // Card "Mark Done" functionality - marks BOTH as done for convenience, or untoggles both if fully done
   const handleToggleDone = (id: string) => {
       setUserProgress(prev => {
           const current = prev[id] || {};
@@ -2043,7 +1941,6 @@ const App: React.FC = () => {
     setReviews([review, ...reviews]);
   };
 
-  // --- Adaptation Handlers ---
   const handleAddAdaptation = (adaptation: Adaptation) => {
     setAdaptations([...adaptations, adaptation]);
   };
@@ -2056,7 +1953,6 @@ const App: React.FC = () => {
     setAdaptations(prev => prev.filter(a => a.id !== id));
   };
 
-  // --- Author Handlers ---
   const handleAddAuthor = (author: Author) => {
       setAuthors([...authors, author]);
   };
@@ -2080,7 +1976,7 @@ const App: React.FC = () => {
           name,
           bio: 'No bio provided yet.',
           favoriteGenres: [],
-          avatarUrl: 'https://picsum.photos/seed/user/200/200', // Default Avatar
+          avatarUrl: 'https://picsum.photos/seed/user/200/200',
       });
   };
 

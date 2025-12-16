@@ -67,25 +67,25 @@ export const Layout: React.FC<LayoutProps> = ({ children, isLoggedIn = false, is
                     </Link>
                     <Link
                       to="/favourites"
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                      className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-200 ${
                         isActive('/favourites')
                           ? 'bg-slate-800 text-pink-400'
                           : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                       }`}
+                      title="Favorites"
                     >
-                      <Heart className="h-4 w-4" />
-                      <span>Favs</span>
+                      <Heart className="h-5 w-5" />
                     </Link>
                     <Link
                       to="/done"
-                      className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
+                      className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors duration-200 ${
                         isActive('/done')
                           ? 'bg-slate-800 text-green-400'
                           : 'text-slate-300 hover:bg-slate-800 hover:text-white'
                       }`}
+                      title="Done List"
                     >
-                      <CheckSquare className="h-4 w-4" />
-                      <span>Done</span>
+                      <CheckSquare className="h-5 w-5" />
                     </Link>
                   </>
                 )}
