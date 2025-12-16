@@ -3,7 +3,7 @@ import { HashRouter, Routes, Route, Navigate, Link, useNavigate, useParams } fro
 import { Layout } from './components/Layout';
 import { INITIAL_ADAPTATIONS, INITIAL_AUTHORS, INITIAL_REVIEWS } from './constants';
 import { Adaptation, Author, Review, UserProfile, UserProgress } from './types';
-import { Users, MapPin, Quote, Plus, Book, ArrowRight, Lock, Star, MessageSquare, BookOpen, Edit2, Check, User as UserIcon, Save, Search, Heart, CheckCircle, Calendar, ChevronLeft, Filter, Film, AlertTriangle, Eye, EyeOff, Play, ShoppingBag, Globe, Clock, Tv, Trash2, X, CheckSquare, Award, BarChart3, Image as ImageIcon, Scale, Clapperboard, Camera, Video, Navigation, Info, ExternalLink } from 'lucide-react';
+import { Users, MapPin, Quote, Plus, Book, ArrowRight, Lock, Star, MessageSquare, BookOpen, Edit2, Check, User as UserIcon, Save, Search, Heart, CheckCircle, Calendar, ChevronLeft, Filter, Film, AlertTriangle, Eye, EyeOff, Play, ShoppingBag, Globe, Clock, Tv, Trash2, X, CheckSquare, Award, BarChart3, Image as ImageIcon, Scale, Clapperboard, Camera, Video, Navigation, Info, ExternalLink, Upload } from 'lucide-react';
 
 // --- Page Components ---
 
@@ -212,6 +212,8 @@ const Home: React.FC<{ adaptations: Adaptation[]; isLoggedIn: boolean }> = ({ ad
     </div>
   );
 };
+
+// ... (MapPage, FamousNovels, Authors, Admin, Login components are standard and will be included in full below) ...
 
 interface MapLocation {
     id: string;
@@ -762,14 +764,16 @@ const Admin: React.FC<{
     );
 };
 
-const Login: React.FC<{ onLogin: (email: string, pass: string) => void }> = ({ onLogin }) => {
+const Login: React.FC<{ onLogin: (email: string, pass: string, name?: string) => void }> = ({ onLogin }) => {
+    const [isSignUp, setIsSignUp] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [name, setName] = useState('');
     const navigate = useNavigate();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onLogin(email, password);
+        onLogin(email, password, isSignUp ? name : undefined);
         navigate('/');
     };
 
@@ -786,10 +790,27 @@ const Login: React.FC<{ onLogin: (email: string, pass: string) => void }> = ({ o
                         <Lock className="w-8 h-8 text-purple-500" />
                     </div>
                 </div>
-                <h2 className="text-3xl font-serif font-bold text-white text-center mb-2">Welcome Back</h2>
-                <p className="text-slate-400 text-center mb-8">Sign in to track your watched adaptations.</p>
+                <h2 className="text-3xl font-serif font-bold text-white text-center mb-2">
+                    {isSignUp ? 'Create Account' : 'Welcome Back'}
+                </h2>
+                <p className="text-slate-400 text-center mb-8">
+                    {isSignUp ? 'Start your journey from page to screen.' : 'Sign in to track your watched adaptations.'}
+                </p>
 
-                <form onSubmit={handleLogin} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                    {isSignUp && (
+                        <div>
+                            <label className="block text-sm font-medium text-slate-300 mb-1">Full Name</label>
+                            <input 
+                                type="text" 
+                                required
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                                placeholder="Your Name"
+                            />
+                        </div>
+                    )}
                     <div>
                         <label className="block text-sm font-medium text-slate-300 mb-1">Email Address</label>
                         <input 
@@ -816,11 +837,17 @@ const Login: React.FC<{ onLogin: (email: string, pass: string) => void }> = ({ o
                         type="submit" 
                         className="w-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-purple-500/25 transition-all duration-300 transform hover:-translate-y-0.5"
                     >
-                        Sign In
+                        {isSignUp ? 'Sign Up' : 'Sign In'}
                     </button>
                 </form>
                 <div className="mt-6 text-center text-sm text-slate-500">
-                    Don't have an account? <span className="text-purple-400 cursor-pointer hover:underline">Sign up</span>
+                    {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
+                    <span 
+                        onClick={() => setIsSignUp(!isSignUp)}
+                        className="text-purple-400 cursor-pointer hover:underline"
+                    >
+                        {isSignUp ? 'Sign In' : 'Sign up'}
+                    </span>
                 </div>
             </div>
         </div>
@@ -852,6 +879,19 @@ const Profile: React.FC<{
     const handleSave = () => {
         onUpdate(editForm);
         setIsEditing(false);
+    };
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                if (typeof reader.result === 'string') {
+                    setEditForm({ ...editForm, avatarUrl: reader.result });
+                }
+            };
+            reader.readAsDataURL(file);
+        }
     };
 
     const stats = useMemo(() => {
@@ -905,7 +945,7 @@ const Profile: React.FC<{
                                 )}
                             </div>
                             {isEditing && (
-                                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center pointer-events-none">
                                     <ImageIcon className="w-8 h-8 text-white opacity-80" />
                                 </div>
                             )}
@@ -913,14 +953,19 @@ const Profile: React.FC<{
                         
                         {isEditing && (
                             <div className="mb-4">
-                                <label className="block text-xs text-slate-400 mb-1 text-left">Profile Image URL</label>
-                                <input 
-                                    type="text" 
-                                    value={editForm.avatarUrl || ''} 
-                                    onChange={(e) => setEditForm({...editForm, avatarUrl: e.target.value})}
-                                    placeholder="https://example.com/me.jpg"
-                                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-500"
-                                />
+                                <label className="block text-xs text-slate-400 mb-2 text-left">Profile Photo</label>
+                                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-700 border-dashed rounded-xl cursor-pointer bg-slate-800/50 hover:bg-slate-800 hover:border-purple-500 transition-all group">
+                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                        <Upload className="w-6 h-6 text-slate-500 mb-1 group-hover:text-purple-400 transition-colors" />
+                                        <p className="text-xs text-slate-500 group-hover:text-slate-300">Click to upload new picture</p>
+                                    </div>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*"
+                                        className="hidden" 
+                                        onChange={handleImageUpload}
+                                    />
+                                </label>
                             </div>
                         )}
 
@@ -1278,15 +1323,19 @@ const AdaptationList: React.FC<{
 const AdaptationDetails: React.FC<{ 
     adaptations: Adaptation[]; 
     progress: UserProgress; 
+    reviews: Review[];
+    onAddReview: (r: Review) => void;
+    currentUser: UserProfile | null;
     onToggleFavorite: (id: string, type: 'book' | 'movie' | 'adaptation') => void; 
     onToggleRead: (id: string) => void;
     onToggleWatched: (id: string) => void;
-}> = ({ adaptations, progress, onToggleFavorite, onToggleRead, onToggleWatched }) => {
+}> = ({ adaptations, progress, reviews, onAddReview, currentUser, onToggleFavorite, onToggleRead, onToggleWatched }) => {
     const { id } = useParams();
     const navigate = useNavigate();
     const item = adaptations.find(a => a.id === id);
     const [showSpoilers, setShowSpoilers] = useState(false);
     const [reviewText, setReviewText] = useState('');
+    const [rating, setRating] = useState(5);
 
     const recommendations = useMemo(() => {
         if (!item) return [];
@@ -1295,6 +1344,26 @@ const AdaptationDetails: React.FC<{
             (a.genre.some(g => item.genre.includes(g)) || a.author === item.author)
         ).slice(0, 3);
     }, [adaptations, item]);
+
+    const handlePostReview = () => {
+        if (!reviewText.trim() || !item) return;
+        
+        const newReview: Review = {
+            id: Date.now().toString(),
+            userName: currentUser?.name || 'Anonymous',
+            rating: rating,
+            comment: reviewText,
+            itemId: item.id,
+            itemName: item.movieTitle,
+            date: new Date().toISOString().split('T')[0]
+        };
+        
+        onAddReview(newReview);
+        setReviewText('');
+        setRating(5);
+    };
+
+    const itemReviews = reviews.filter(r => r.itemId === item?.id);
 
     if (!item) {
         return (
@@ -1527,6 +1596,18 @@ const AdaptationDetails: React.FC<{
                         </div>
                         <div className="mb-8">
                             <label className="block text-sm font-bold text-slate-300 mb-2">Write a Review</label>
+                            <div className="flex gap-2 mb-3">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <button 
+                                        key={star}
+                                        type="button"
+                                        onClick={() => setRating(star)}
+                                        className={`p-1 transition-transform hover:scale-110 ${star <= rating ? 'text-yellow-500' : 'text-slate-700'}`}
+                                    >
+                                        <Star className="w-5 h-5 fill-current" />
+                                    </button>
+                                ))}
+                            </div>
                             <textarea 
                                 value={reviewText}
                                 onChange={(e) => setReviewText(e.target.value)}
@@ -1535,20 +1616,36 @@ const AdaptationDetails: React.FC<{
                                 placeholder="Share your thoughts on the adaptation..."
                             ></textarea>
                             <div className="flex justify-end mt-2">
-                                <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-bold text-sm">Post Review</button>
+                                <button 
+                                    onClick={handlePostReview}
+                                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-bold text-sm"
+                                >
+                                    Post Review
+                                </button>
                             </div>
                         </div>
                         <div className="space-y-6">
-                            <div className="flex gap-4">
-                                <div className="w-10 h-10 rounded-full bg-purple-900/50 flex items-center justify-center text-purple-300 font-bold shrink-0">A</div>
-                                <div>
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <span className="font-bold text-white">Alice M.</span>
-                                        <div className="flex text-yellow-500"><Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" /><Star className="w-3 h-3 fill-current" /></div>
+                            {itemReviews.length > 0 ? (
+                                itemReviews.map(review => (
+                                    <div key={review.id} className="flex gap-4 p-4 bg-slate-950/50 rounded-xl border border-slate-800/50">
+                                        <div className="w-10 h-10 rounded-full bg-purple-900/50 flex items-center justify-center text-purple-300 font-bold shrink-0 text-sm">
+                                            {review.userName.charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="font-bold text-white">{review.userName}</span>
+                                                <div className="flex text-yellow-500 gap-0.5">
+                                                    {[...Array(review.rating)].map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
+                                                </div>
+                                            </div>
+                                            <p className="text-slate-300 text-sm leading-relaxed">{review.comment}</p>
+                                            <p className="text-slate-600 text-xs mt-2">{review.date}</p>
+                                        </div>
                                     </div>
-                                    <p className="text-slate-300 text-sm leading-relaxed">The movie captured the scale perfectly, but I missed the inner monologues from the book.</p>
-                                </div>
-                            </div>
+                                ))
+                            ) : (
+                                <p className="text-slate-500 italic text-center">No reviews yet. Be the first to share your thoughts!</p>
+                            )}
                         </div>
                      </div>
                 </section>
@@ -1965,15 +2062,16 @@ const App: React.FC = () => {
       setAuthors(prev => prev.filter(a => a.id !== id));
   };
 
-  const handleLogin = (email: string, password: string) => {
+  const handleLogin = (email: string, password: string, name?: string) => {
       const role = email === 'admin@gmail.com' ? 'admin' : 'user';
-      const name = role === 'admin' ? 'System Administrator' : 'Book Lover';
+      // Use provided name for signup, or default logic for login
+      const userName = name || (role === 'admin' ? 'System Administrator' : 'Book Lover');
       
       setCurrentUser({
           email,
           password,
           role,
-          name,
+          name: userName,
           bio: 'No bio provided yet.',
           favoriteGenres: [],
           avatarUrl: 'https://picsum.photos/seed/user/200/200',
@@ -2012,6 +2110,9 @@ const App: React.FC = () => {
                 ? <AdaptationDetails 
                     adaptations={adaptations}
                     progress={userProgress}
+                    reviews={reviews}
+                    onAddReview={handleAddReview}
+                    currentUser={currentUser}
                     onToggleFavorite={handleToggleFavorite}
                     onToggleRead={handleToggleRead}
                     onToggleWatched={handleToggleWatched}
