@@ -24,6 +24,7 @@ export interface Adaptation {
 
   // Movie Specifics
   moviePosterUrl: string;
+  movieType?: string;      // e.g. "Movie", "TV Series", "Miniseries"
   movieDescription?: string;
   director?: string;
   cast?: string[];

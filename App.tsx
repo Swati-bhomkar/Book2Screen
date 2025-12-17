@@ -1,9 +1,15 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { HashRouter, Routes, Route, Navigate, Link, useNavigate, useParams } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { INITIAL_ADAPTATIONS, INITIAL_AUTHORS, INITIAL_REVIEWS } from './constants';
 import { Adaptation, Author, Review, UserProfile, UserProgress } from './types';
-import { Users, MapPin, Quote, Plus, Book, ArrowRight, Lock, Star, MessageSquare, BookOpen, Edit2, Check, User as UserIcon, Save, Search, Heart, CheckCircle, Calendar, ChevronLeft, Filter, Film, AlertTriangle, Eye, EyeOff, Play, ShoppingBag, Globe, Clock, Tv, Trash2, X, CheckSquare, Award, BarChart3, Image as ImageIcon, Scale, Clapperboard, Camera, Video, Navigation, Info, ExternalLink, Upload } from 'lucide-react';
+import { Users, MapPin, Quote, Plus, Book, ArrowRight, Lock, Star, MessageSquare, BookOpen, Edit2, Check, User as UserIcon, Save, Search, Heart, CheckCircle, Calendar, ChevronLeft, Filter, Film, AlertTriangle, Eye, EyeOff, Play, ShoppingBag, Globe, Clock, Tv, Trash2, X, CheckSquare, Award, BarChart3, Image as ImageIcon, Scale, Clapperboard, Camera, Video, Navigation, Info, ExternalLink, Upload, Shield, Settings, Loader2 } from 'lucide-react';
+
+const ALL_GENRES = [
+    'Drama', 'Romance', 'Fantasy', 'Adventure', 'Mystery', 'Thriller', 
+    'Family', 'Action', 'Comedy', 'Crime', 'Horror', 'Biography', 
+    'History', 'Sci-Fi', 'Music'
+];
 
 // --- Page Components ---
 
@@ -212,8 +218,6 @@ const Home: React.FC<{ adaptations: Adaptation[]; isLoggedIn: boolean }> = ({ ad
     </div>
   );
 };
-
-// ... (MapPage, FamousNovels, Authors, Admin, Login components are standard and will be included in full below) ...
 
 interface MapLocation {
     id: string;
@@ -443,7 +447,6 @@ const Admin: React.FC<{
         const processedItem = { ...currentItem };
         
         if (activeTab === 'adaptations') {
-            if (typeof processedItem.genre === 'string') processedItem.genre = processedItem.genre.split(',').map((s: string) => s.trim());
             if (typeof processedItem.moods === 'string') processedItem.moods = processedItem.moods.split(',').map((s: string) => s.trim());
             if (typeof processedItem.cast === 'string') processedItem.cast = processedItem.cast.split(',').map((s: string) => s.trim());
             
@@ -475,8 +478,8 @@ const Admin: React.FC<{
             setCurrentItem({
                 bookTitle: '', movieTitle: '', author: '', releaseYear: '', genre: [], moods: [],
                 famousQuote: '', comparisonSummary: '', spoilerAnalysis: '', isFamous: false,
-                coverUrl: '', bookDescription: '', targetAudience: '', bookRating: 0, originalLanguage: '', bookReleaseYear: '', readLink: '', buyLink: '',
-                moviePosterUrl: '', movieDescription: '', director: '', cast: [], movieTargetAudience: '', movieRating: 0, trailerUrl: '', ottLink: ''
+                coverUrl: '', bookDescription: '', targetAudience: '', bookRating: 0, originalLanguage: 'English', bookReleaseYear: '', readLink: '', buyLink: '',
+                moviePosterUrl: '', movieType: 'Movie', movieDescription: '', director: '', cast: [], movieTargetAudience: '', movieRating: 0, trailerUrl: '', ottLink: ''
             });
         } else {
             setCurrentItem({ name: '', bio: '', imageUrl: '', notableWorks: [] });
@@ -486,11 +489,19 @@ const Admin: React.FC<{
     const handleEdit = (item: any) => {
         setIsEditing(true);
         const editableItem = { ...item };
-        if (editableItem.genre) editableItem.genre = editableItem.genre.join(', ');
         if (editableItem.moods) editableItem.moods = editableItem.moods.join(', ');
         if (editableItem.cast) editableItem.cast = editableItem.cast.join(', ');
         if (editableItem.notableWorks) editableItem.notableWorks = editableItem.notableWorks.join(', ');
         setCurrentItem(editableItem);
+    };
+
+    const toggleGenre = (genre: string) => {
+        const currentGenres = currentItem.genre || [];
+        if (currentGenres.includes(genre)) {
+            setCurrentItem({ ...currentItem, genre: currentGenres.filter((g: string) => g !== genre) });
+        } else {
+            setCurrentItem({ ...currentItem, genre: [...currentGenres, genre] });
+        }
     };
 
     if (isEditing) {
@@ -530,8 +541,20 @@ const Admin: React.FC<{
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="block text-sm text-slate-400 mb-1">Genres (comma separated)</label>
-                                        <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.genre} onChange={e => setCurrentItem({...currentItem, genre: e.target.value})} placeholder="Sci-Fi, Drama, Action" />
+                                        <label className="block text-sm text-slate-400 mb-2">Genres</label>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 bg-slate-950 p-4 rounded-lg border border-slate-700">
+                                            {ALL_GENRES.map(genre => (
+                                                <label key={genre} className="flex items-center space-x-2 cursor-pointer">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={currentItem.genre?.includes(genre)} 
+                                                        onChange={() => toggleGenre(genre)}
+                                                        className="w-4 h-4 text-purple-600 rounded bg-slate-800 border-slate-600 focus:ring-purple-500"
+                                                    />
+                                                    <span className="text-sm text-slate-300">{genre}</span>
+                                                </label>
+                                            ))}
+                                        </div>
                                     </div>
                                     <div>
                                         <label className="block text-sm text-slate-400 mb-1">Famous Quote</label>
@@ -565,6 +588,10 @@ const Admin: React.FC<{
                                             <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.bookReleaseYear} onChange={e => setCurrentItem({...currentItem, bookReleaseYear: e.target.value})} />
                                         </div>
                                         <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Original Language</label>
+                                            <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.originalLanguage} onChange={e => setCurrentItem({...currentItem, originalLanguage: e.target.value})} placeholder="e.g. English, French" />
+                                        </div>
+                                        <div>
                                             <label className="block text-sm text-slate-400 mb-1">Target Audience</label>
                                             <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.targetAudience} onChange={e => setCurrentItem({...currentItem, targetAudience: e.target.value})} />
                                         </div>
@@ -595,6 +622,19 @@ const Admin: React.FC<{
                                         <div>
                                             <label className="block text-sm text-slate-400 mb-1">Poster URL</label>
                                             <input className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none" value={currentItem.moviePosterUrl} onChange={e => setCurrentItem({...currentItem, moviePosterUrl: e.target.value})} placeholder="https://..." />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Movie Type</label>
+                                            <select 
+                                                className="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:outline-none"
+                                                value={currentItem.movieType}
+                                                onChange={e => setCurrentItem({...currentItem, movieType: e.target.value})}
+                                            >
+                                                <option value="Movie">Movie</option>
+                                                <option value="TV Series">TV Series</option>
+                                                <option value="Miniseries">Miniseries</option>
+                                                <option value="Other">Other</option>
+                                            </select>
                                         </div>
                                         <div>
                                             <label className="block text-sm text-slate-400 mb-1">Director</label>
@@ -854,293 +894,6 @@ const Login: React.FC<{ onLogin: (email: string, pass: string, name?: string) =>
     );
 };
 
-const Profile: React.FC<{ 
-    user: UserProfile; 
-    onUpdate: (u: UserProfile) => void; 
-    userProgress: UserProgress;
-    reviews: Review[];
-}> = ({ user, onUpdate, userProgress, reviews }) => {
-    const [isEditing, setIsEditing] = useState(false);
-    const [editForm, setEditForm] = useState<UserProfile>(user);
-    const [showPassword, setShowPassword] = useState(false);
-
-    const availableGenres = ["Sci-Fi", "Fantasy", "Drama", "Romance", "Horror", "Thriller", "Classic", "Mystery", "Biography"];
-
-    const toggleGenre = (genre: string) => {
-        if (!isEditing) return;
-        const currentGenres = editForm.favoriteGenres || [];
-        if (currentGenres.includes(genre)) {
-            setEditForm({ ...editForm, favoriteGenres: currentGenres.filter(g => g !== genre) });
-        } else {
-            setEditForm({ ...editForm, favoriteGenres: [...currentGenres, genre] });
-        }
-    };
-
-    const handleSave = () => {
-        onUpdate(editForm);
-        setIsEditing(false);
-    };
-
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                if (typeof reader.result === 'string') {
-                    setEditForm({ ...editForm, avatarUrl: reader.result });
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    const stats = useMemo(() => {
-        let booksRead = 0, moviesWatched = 0, adaptationsDone = 0;
-        let favBooks = 0, favMovies = 0, favAdaptations = 0;
-        
-        Object.keys(userProgress).forEach(key => {
-            const p = userProgress[key];
-            if (p.isBookRead) booksRead++;
-            if (p.isMovieWatched) moviesWatched++;
-            if (p.isBookRead && p.isMovieWatched) adaptationsDone++;
-            if (p.isFavoriteBook) favBooks++;
-            if (p.isFavoriteMovie) favMovies++;
-            if (p.isFavoriteAdaptation) favAdaptations++;
-        });
-        return { booksRead, moviesWatched, adaptationsDone, favBooks, favMovies, favAdaptations };
-    }, [userProgress]);
-
-    const userReviews = reviews.filter(r => r.userName === user.name);
-
-    return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="flex justify-between items-center mb-8">
-                <h2 className="text-4xl font-serif font-bold text-white">My Profile</h2>
-                {!isEditing ? (
-                    <button 
-                        onClick={() => setIsEditing(true)} 
-                        className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-purple-400 px-4 py-2 rounded-full font-medium transition-colors"
-                    >
-                        <Edit2 className="w-4 h-4" /> Edit Profile
-                    </button>
-                ) : (
-                    <button 
-                        onClick={handleSave} 
-                        className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-full font-medium transition-colors shadow-lg shadow-purple-900/20"
-                    >
-                        <Save className="w-4 h-4" /> Save Changes
-                    </button>
-                )}
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <div className="lg:col-span-4 space-y-6">
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800 text-center sticky top-24">
-                        <div className="relative w-32 h-32 mx-auto mb-6 group">
-                            <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-700 rounded-full flex items-center justify-center border-4 border-slate-900 shadow-2xl overflow-hidden">
-                                {editForm.avatarUrl ? (
-                                    <img src={editForm.avatarUrl} alt={editForm.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <UserIcon className="w-16 h-16 text-slate-500" />
-                                )}
-                            </div>
-                            {isEditing && (
-                                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center pointer-events-none">
-                                    <ImageIcon className="w-8 h-8 text-white opacity-80" />
-                                </div>
-                            )}
-                        </div>
-                        
-                        {isEditing && (
-                            <div className="mb-4">
-                                <label className="block text-xs text-slate-400 mb-2 text-left">Profile Photo</label>
-                                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-slate-700 border-dashed rounded-xl cursor-pointer bg-slate-800/50 hover:bg-slate-800 hover:border-purple-500 transition-all group">
-                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                        <Upload className="w-6 h-6 text-slate-500 mb-1 group-hover:text-purple-400 transition-colors" />
-                                        <p className="text-xs text-slate-500 group-hover:text-slate-300">Click to upload new picture</p>
-                                    </div>
-                                    <input 
-                                        type="file" 
-                                        accept="image/*"
-                                        className="hidden" 
-                                        onChange={handleImageUpload}
-                                    />
-                                </label>
-                            </div>
-                        )}
-
-                        <h3 className="text-xl font-bold text-white mb-1">{editForm.name}</h3>
-                        <p className="text-purple-500 font-medium text-sm mb-4 uppercase tracking-wide">{editForm.role}</p>
-                        <div className="text-slate-400 text-sm mb-6">{editForm.email}</div>
-                        
-                        <div className="grid grid-cols-2 gap-2 text-center border-t border-slate-800 pt-6">
-                            <div>
-                                <div className="text-2xl font-bold text-white">{stats.adaptationsDone}</div>
-                                <div className="text-xs text-slate-500 uppercase tracking-wide">Full Adaptations</div>
-                            </div>
-                            <div>
-                                <div className="text-2xl font-bold text-white">{userReviews.length}</div>
-                                <div className="text-xs text-slate-500 uppercase tracking-wide">Reviews Given</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="lg:col-span-8 space-y-8">
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-green-500/10 rounded-lg"><BookOpen className="w-4 h-4 text-green-500" /></div>
-                                <span className="text-slate-400 text-xs uppercase font-bold">Books Read</span>
-                            </div>
-                            <div className="text-3xl font-bold text-white">{stats.booksRead}</div>
-                        </div>
-                        <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-blue-500/10 rounded-lg"><Film className="w-4 h-4 text-blue-500" /></div>
-                                <span className="text-slate-400 text-xs uppercase font-bold">Movies Watched</span>
-                            </div>
-                            <div className="text-3xl font-bold text-white">{stats.moviesWatched}</div>
-                        </div>
-                        <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                             <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-purple-500/10 rounded-lg"><Award className="w-4 h-4 text-purple-500" /></div>
-                                <span className="text-slate-400 text-xs uppercase font-bold">Adaptations</span>
-                            </div>
-                            <div className="text-3xl font-bold text-white">{stats.adaptationsDone}</div>
-                        </div>
-                        <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-pink-500/10 rounded-lg"><Heart className="w-4 h-4 text-pink-500" /></div>
-                                <span className="text-slate-400 text-xs uppercase font-bold">Fav Books</span>
-                            </div>
-                            <div className="text-3xl font-bold text-white">{stats.favBooks}</div>
-                        </div>
-                        <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-pink-500/10 rounded-lg"><Heart className="w-4 h-4 text-pink-500" /></div>
-                                <span className="text-slate-400 text-xs uppercase font-bold">Fav Movies</span>
-                            </div>
-                            <div className="text-3xl font-bold text-white">{stats.favMovies}</div>
-                        </div>
-                         <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800">
-                            <div className="flex items-center gap-3 mb-2">
-                                <div className="p-2 bg-yellow-500/10 rounded-lg"><Star className="w-4 h-4 text-yellow-500" /></div>
-                                <span className="text-slate-400 text-xs uppercase font-bold">Fav Adaptations</span>
-                            </div>
-                            <div className="text-3xl font-bold text-white">{stats.favAdaptations}</div>
-                        </div>
-                    </div>
-
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
-                        <h3 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">Personal Details</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Full Name</label>
-                                <input 
-                                    type="text" 
-                                    disabled={!isEditing}
-                                    value={editForm.name}
-                                    onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                                    className={`w-full bg-slate-800 border rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${isEditing ? 'border-slate-600' : 'border-transparent cursor-default'}`}
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm text-slate-400 mb-1">Email</label>
-                                <input 
-                                    type="email" 
-                                    disabled
-                                    value={editForm.email}
-                                    className="w-full bg-slate-800/50 border border-transparent rounded-lg px-4 py-3 text-slate-400 cursor-not-allowed"
-                                />
-                            </div>
-                        </div>
-                        <div className="mb-6">
-                            <label className="block text-sm text-slate-400 mb-1">Bio</label>
-                            <textarea 
-                                rows={3}
-                                disabled={!isEditing}
-                                value={editForm.bio}
-                                onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
-                                className={`w-full bg-slate-800 border rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 ${isEditing ? 'border-slate-600' : 'border-transparent cursor-default'}`}
-                            />
-                        </div>
-                         <div>
-                            <label className="block text-sm text-slate-400 mb-1">Password</label>
-                            <div className="relative">
-                                <input 
-                                    type={showPassword ? "text" : "password"}
-                                    disabled={!isEditing}
-                                    value={editForm.password}
-                                    onChange={(e) => setEditForm({...editForm, password: e.target.value})}
-                                    className={`w-full bg-slate-800 border rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 pr-20 ${isEditing ? 'border-slate-600' : 'border-transparent cursor-default'}`}
-                                />
-                                {isEditing && (
-                                    <button 
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-purple-400 font-bold hover:text-purple-300"
-                                    >
-                                        {showPassword ? "HIDE" : "SHOW"}
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                     <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
-                         <h3 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2 flex items-center gap-2">
-                             <MessageSquare className="w-5 h-5 text-purple-500" /> My Reviews ({userReviews.length})
-                         </h3>
-                         {userReviews.length > 0 ? (
-                             <div className="space-y-4">
-                                 {userReviews.map(review => (
-                                     <div key={review.id} className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                                         <div className="flex justify-between mb-2">
-                                             <span className="font-bold text-white">{review.itemName}</span>
-                                             <div className="flex text-yellow-500 gap-0.5">
-                                                 {[...Array(review.rating)].map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
-                                             </div>
-                                         </div>
-                                         <p className="text-slate-400 text-sm italic">"{review.comment}"</p>
-                                         <div className="text-right mt-2 text-xs text-slate-600">{review.date}</div>
-                                     </div>
-                                 ))}
-                             </div>
-                         ) : (
-                             <p className="text-slate-500 italic text-center py-4">You haven't submitted any reviews yet.</p>
-                         )}
-                     </div>
-
-                    <div className="bg-slate-900 p-8 rounded-3xl border border-slate-800">
-                        <h3 className="text-xl font-bold text-white mb-6 border-b border-slate-800 pb-2">Favorite Genres</h3>
-                        <div className="flex flex-wrap gap-3">
-                            {availableGenres.map(genre => {
-                                const isSelected = editForm.favoriteGenres?.includes(genre);
-                                return (
-                                    <button
-                                        key={genre}
-                                        onClick={() => toggleGenre(genre)}
-                                        disabled={!isEditing}
-                                        className={`px-4 py-2 rounded-full text-sm font-medium border transition-all ${
-                                            isSelected 
-                                            ? 'bg-purple-600 text-white border-purple-500' 
-                                            : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'
-                                        } ${!isEditing && !isSelected ? 'opacity-50 cursor-default' : ''}`}
-                                    >
-                                        {genre}
-                                        {isSelected && <Check className="w-3 h-3 inline-block ml-1" />}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-};
-
 const AdaptationList: React.FC<{ 
     adaptations: Adaptation[]; 
     progress: UserProgress;
@@ -1151,8 +904,6 @@ const AdaptationList: React.FC<{
   const [selectedGenre, setSelectedGenre] = useState('All');
   const [showCompleted, setShowCompleted] = useState(false);
   const navigate = useNavigate();
-
-  const genres = ['All', 'Sci-Fi', 'Fantasy', 'Drama', 'Romance', 'Thriller', 'Classic', 'Adventure', 'Crime'];
 
   const filteredAdaptations = useMemo(() => {
     return adaptations.filter(item => {
@@ -1194,7 +945,17 @@ const AdaptationList: React.FC<{
 
               <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="flex overflow-x-auto pb-2 gap-2 hide-scrollbar flex-1">
-                      {genres.map(genre => (
+                      <button
+                          onClick={() => setSelectedGenre('All')}
+                          className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                              selectedGenre === 'All'
+                              ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/25'
+                              : 'bg-slate-900 text-slate-400 border border-slate-800 hover:border-slate-600 hover:text-white'
+                          }`}
+                      >
+                          All
+                      </button>
+                      {ALL_GENRES.map(genre => (
                           <button
                               key={genre}
                               onClick={() => setSelectedGenre(genre)}
@@ -1251,7 +1012,7 @@ const AdaptationList: React.FC<{
                     />
                     <div className="absolute top-0 left-0 w-full h-full bg-black/10 transition-all"></div>
                     <div className="absolute bottom-2 right-2 bg-purple-600/90 backdrop-blur-md text-white text-[9px] font-bold px-2 py-0.5 rounded border border-white/10 shadow-sm">
-                        MOVIE
+                        {item.movieType === 'TV Series' ? 'SERIES' : 'MOVIE'}
                     </div>
                 </div>
 
@@ -1329,7 +1090,8 @@ const AdaptationDetails: React.FC<{
     onToggleFavorite: (id: string, type: 'book' | 'movie' | 'adaptation') => void; 
     onToggleRead: (id: string) => void;
     onToggleWatched: (id: string) => void;
-}> = ({ adaptations, progress, reviews, onAddReview, currentUser, onToggleFavorite, onToggleRead, onToggleWatched }) => {
+    onToggleComplete: (id: string) => void;
+}> = ({ adaptations, progress, reviews, onAddReview, currentUser, onToggleFavorite, onToggleRead, onToggleWatched, onToggleComplete }) => {
     const { id } = useParams();
     const navigate = useNavigate();
     const item = adaptations.find(a => a.id === id);
@@ -1376,6 +1138,9 @@ const AdaptationDetails: React.FC<{
         );
     }
 
+    const isFullyDone = progress[item.id]?.isBookRead && progress[item.id]?.isMovieWatched;
+    const isFullyFavorite = progress[item.id]?.isFavoriteBook && progress[item.id]?.isFavoriteMovie;
+
     return (
         <div className="min-h-screen pb-20 pt-8">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
@@ -1398,13 +1163,34 @@ const AdaptationDetails: React.FC<{
                                 <span className="text-slate-300">{item.releaseYear}</span>
                             </div>
                         </div>
-                        <button 
-                            onClick={() => onToggleFavorite(item.id, 'adaptation')}
-                            className={`p-3 rounded-full border ${progress[item.id]?.isFavoriteAdaptation ? 'border-pink-500 text-pink-500 bg-pink-500/10' : 'border-slate-700 text-slate-400 hover:text-white'}`}
-                            title="Favorite this Adaptation"
-                        >
-                            <Heart className={`w-6 h-6 ${progress[item.id]?.isFavoriteAdaptation ? 'fill-current' : ''}`} />
-                        </button>
+                        <div className="flex gap-3">
+                            <button 
+                                onClick={() => onToggleComplete(item.id)}
+                                className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all duration-300 group ${
+                                    isFullyDone 
+                                    ? 'bg-green-500 border-green-500 text-white shadow-[0_0_20px_rgba(34,197,94,0.4)]' 
+                                    : 'bg-transparent border-slate-700 text-slate-400 hover:text-white hover:border-green-500/50 hover:bg-green-500/10'
+                                }`}
+                                title={isFullyDone ? "Mark as Incomplete" : "Mark as Complete"}
+                            >
+                                {isFullyDone ? (
+                                    <Check className="w-6 h-6" strokeWidth={3} />
+                                ) : (
+                                    <CheckCircle className="w-6 h-6 group-hover:text-green-400 transition-colors" />
+                                )}
+                            </button>
+                            <button 
+                                onClick={() => onToggleFavorite(item.id, 'adaptation')}
+                                className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all duration-300 group ${
+                                    isFullyFavorite 
+                                    ? 'border-pink-500 text-pink-500 bg-pink-500/10 shadow-[0_0_20px_rgba(236,72,153,0.3)]' 
+                                    : 'bg-transparent border-slate-700 text-slate-400 hover:text-white hover:border-pink-500/50 hover:bg-pink-500/10'
+                                }`}
+                                title="Favorite this Adaptation"
+                            >
+                                <Heart className={`w-6 h-6 ${isFullyFavorite ? 'fill-current' : 'group-hover:text-pink-400 transition-colors'}`} />
+                            </button>
+                        </div>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-4">
                         {item.genre.map(g => (
@@ -1494,6 +1280,10 @@ const AdaptationDetails: React.FC<{
                                     <div className="flex items-center gap-2 text-slate-300">
                                         <Users className="w-4 h-4 text-blue-500" />
                                         {item.movieTargetAudience || 'General Audience'}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-slate-300">
+                                        <Clapperboard className="w-4 h-4 text-green-500" />
+                                        {item.movieType || 'Movie'}
                                     </div>
                                 </div>
                                 <p className="text-slate-300 leading-relaxed mb-4">{item.movieDescription || "Cinematic adaptation details..."}</p>
@@ -1720,28 +1510,21 @@ const FavouritesPage: React.FC<{ adaptations: Adaptation[]; progress: UserProgre
 
             <div>
                 <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-3 border-b border-slate-800 pb-3">
-                    <Star className="w-6 h-6 text-yellow-500" /> Favourite Adaptations
+                    <Star className="w-6 h-6 text-purple-500" /> Favourite Adaptations
                 </h3>
                 {favAdaptations.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {favAdaptations.map(item => (
-                            <Link key={item.id} to={`/adaptation/${item.id}`} className="group flex bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-xl transition-all hover:shadow-yellow-900/20 hover:-translate-y-1 h-32">
-                                <div className="w-24 shrink-0 relative flex">
-                                    <div className="w-1/2 h-full">
-                                        <img src={item.coverUrl} className="w-full h-full object-cover" alt="Book" />
-                                    </div>
-                                    <div className="w-1/2 h-full">
-                                        <img src={item.moviePosterUrl} className="w-full h-full object-cover" alt="Movie" />
+                            <Link key={item.id} to={`/adaptation/${item.id}`} className="group flex bg-slate-900 rounded-2xl overflow-hidden border border-slate-800 shadow-xl transition-all hover:shadow-purple-900/20 hover:-translate-y-1 h-32">
+                                <div className="w-24 shrink-0 relative">
+                                    <div className="absolute inset-0 flex">
+                                         <img src={item.coverUrl} className="w-1/2 h-full object-cover" alt="" />
+                                         <img src={item.moviePosterUrl} className="w-1/2 h-full object-cover" alt="" />
                                     </div>
                                 </div>
                                 <div className="p-4 flex flex-col justify-center flex-grow relative">
-                                    <h4 className="font-bold text-white group-hover:text-yellow-500 transition-colors truncate mb-1 pr-6">{item.movieTitle}</h4>
+                                    <h4 className="font-bold text-white truncate mb-1 pr-6">{item.movieTitle}</h4>
                                     <p className="text-xs text-slate-400 truncate mb-2">Based on {item.bookTitle}</p>
-                                    <div className="flex gap-1">
-                                        {item.genre.slice(0, 2).map(g => (
-                                            <span key={g} className="text-[10px] bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded border border-slate-700">{g}</span>
-                                        ))}
-                                    </div>
                                     <button onClick={(e) => { e.preventDefault(); onToggleFavorite(item.id, 'adaptation'); }} className="absolute top-2 right-2 text-pink-500 hover:text-white transition-colors">
                                         <Heart className="w-4 h-4 fill-current" />
                                     </button>
@@ -1749,7 +1532,7 @@ const FavouritesPage: React.FC<{ adaptations: Adaptation[]; progress: UserProgre
                             </Link>
                         ))}
                     </div>
-                ) : <p className="text-slate-500 italic">No general favorites added yet.</p>}
+                ) : <p className="text-slate-500 italic">No favorite adaptations added yet.</p>}
             </div>
         </div>
     );
@@ -1760,7 +1543,9 @@ const DonePage: React.FC<{
     progress: UserProgress; 
     onToggleRead: (id: string) => void;
     onToggleWatched: (id: string) => void;
-}> = ({ adaptations, progress, onToggleRead, onToggleWatched }) => {
+    reviews: Review[];
+    user: UserProfile | null;
+}> = ({ adaptations, progress, onToggleRead, onToggleWatched, reviews, user }) => {
     
     const doneItems = adaptations.filter(a => progress[a.id]?.isBookRead || progress[a.id]?.isMovieWatched);
 
@@ -1784,6 +1569,7 @@ const DonePage: React.FC<{
                             {doneItems.map(item => {
                                 const isBookRead = progress[item.id]?.isBookRead;
                                 const isMovieWatched = progress[item.id]?.isMovieWatched;
+                                const userReview = reviews.find(r => r.itemId === item.id && r.userName === user?.name);
                                 
                                 return (
                                     <tr key={item.id} className="hover:bg-slate-800/50 transition-colors group">
@@ -1820,9 +1606,16 @@ const DonePage: React.FC<{
                                             </button>
                                         </td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className="text-yellow-500 text-sm font-bold">
-                                                -
-                                            </span>
+                                            {userReview ? (
+                                                <div className="flex items-center justify-center gap-1 text-yellow-500 font-bold text-sm">
+                                                    <span>{userReview.rating}</span>
+                                                    <Star className="w-3 h-3 fill-current" />
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-600 text-sm font-bold">
+                                                    -
+                                                </span>
+                                            )}
                                         </td>
                                     </tr>
                                 );
@@ -1982,6 +1775,418 @@ const Authors: React.FC<{ authors: Author[] }> = ({ authors }) => {
     );
 };
 
+const Profile: React.FC<{ 
+    user: UserProfile; 
+    onUpdate: (user: UserProfile) => void;
+    userProgress: UserProgress;
+    reviews: Review[];
+    onUpdateReview: (review: Review) => void;
+    onDeleteReview: (id: string) => void;
+}> = ({ user, onUpdate, userProgress, reviews, onUpdateReview, onDeleteReview }) => {
+    const [activeTab, setActiveTab] = useState<'overview' | 'settings' | 'reviews'>('overview');
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    // Stats calculation
+    const stats = {
+        favBooks: Object.values(userProgress).filter((p: any) => p.isFavoriteBook).length,
+        favMovies: Object.values(userProgress).filter((p: any) => p.isFavoriteMovie).length,
+        favAdaptations: Object.values(userProgress).filter((p: any) => p.isFavoriteAdaptation).length,
+        readBooks: Object.values(userProgress).filter((p: any) => p.isBookRead).length,
+        watchedMovies: Object.values(userProgress).filter((p: any) => p.isMovieWatched).length,
+        completedAdaptations: Object.values(userProgress).filter((p: any) => p.isBookRead && p.isMovieWatched).length,
+    };
+
+    const userReviews = reviews.filter(r => r.userName === user.name);
+
+    // Form State
+    const [formData, setFormData] = useState({
+        name: user.name,
+        email: user.email,
+        password: user.password || '',
+        bio: user.bio,
+    });
+    const [selectedGenres, setSelectedGenres] = useState<string[]>(user.favoriteGenres || []);
+    const [showPassword, setShowPassword] = useState(false);
+
+    // Review Edit State
+    const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
+    const [editReviewData, setEditReviewData] = useState({ rating: 0, comment: '' });
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                onUpdate({ ...user, avatarUrl: reader.result as string });
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleSaveProfile = (e: React.FormEvent) => {
+        e.preventDefault();
+        setSaveStatus('saving');
+        
+        // Simulate network request/processing
+        setTimeout(() => {
+            onUpdate({
+                ...user,
+                ...formData,
+                favoriteGenres: selectedGenres
+            });
+            setSaveStatus('saved');
+            
+            // Revert back to idle after a few seconds
+            setTimeout(() => {
+                setSaveStatus('idle');
+            }, 2000);
+        }, 800);
+    };
+
+    const toggleGenre = (genre: string) => {
+        if (selectedGenres.includes(genre)) {
+            setSelectedGenres(selectedGenres.filter(g => g !== genre));
+        } else {
+            setSelectedGenres([...selectedGenres, genre]);
+        }
+    };
+
+    const startEditReview = (review: Review) => {
+        setEditingReviewId(review.id);
+        setEditReviewData({ rating: review.rating, comment: review.comment });
+    };
+
+    const saveReview = (originalReview: Review) => {
+        onUpdateReview({
+            ...originalReview,
+            rating: editReviewData.rating,
+            comment: editReviewData.comment
+        });
+        setEditingReviewId(null);
+    };
+
+    return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Left Sidebar */}
+                <div className="lg:col-span-4 space-y-6">
+                    {/* User Card */}
+                    <div className="bg-slate-900 rounded-3xl p-8 border border-slate-800 text-center relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-purple-600/20 to-transparent"></div>
+                        
+                        <div className="relative inline-block mb-4">
+                            <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-slate-800 shadow-xl relative bg-slate-800">
+                                <img src={user.avatarUrl || 'https://picsum.photos/seed/user/200/200'} alt={user.name} className="w-full h-full object-cover" />
+                            </div>
+                            <button 
+                                onClick={() => fileInputRef.current?.click()}
+                                className="absolute bottom-0 right-0 p-2 bg-purple-600 rounded-full text-white shadow-lg hover:bg-purple-500 transition-colors"
+                                title="Change Avatar"
+                            >
+                                <Camera className="w-5 h-5" />
+                            </button>
+                            <input 
+                                type="file" 
+                                ref={fileInputRef} 
+                                className="hidden" 
+                                accept="image/*" 
+                                onChange={handleImageUpload} 
+                            />
+                        </div>
+
+                        <h2 className="text-2xl font-bold text-white mb-1">{user.name}</h2>
+                        <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs font-bold text-purple-400 uppercase tracking-wide mb-6">
+                             {user.role === 'admin' ? <Shield className="w-3 h-3" /> : <UserIcon className="w-3 h-3" />}
+                             {user.role}
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                             <button 
+                                onClick={() => setActiveTab('overview')}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'overview' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                             >
+                                 <BarChart3 className="w-5 h-5" /> Overview
+                             </button>
+                             <button 
+                                onClick={() => setActiveTab('settings')}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'settings' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                             >
+                                 <Settings className="w-5 h-5" /> Edit Profile
+                             </button>
+                             <button 
+                                onClick={() => setActiveTab('reviews')}
+                                className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'reviews' ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' : 'bg-slate-950 text-slate-400 hover:text-white hover:bg-slate-800'}`}
+                             >
+                                 <MessageSquare className="w-5 h-5" /> My Reviews
+                             </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Content */}
+                <div className="lg:col-span-8">
+                     {/* CONTENT RENDERING BASED ON TAB */}
+                     {activeTab === 'overview' && (
+                         <div className="space-y-6 animate-fade-in">
+                             <h3 className="text-2xl font-serif font-bold text-white mb-6">Dashboard</h3>
+                             
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                 {/* Favorites Stats */}
+                                 <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex flex-col items-center">
+                                     <Heart className="w-8 h-8 text-pink-500 mb-2" />
+                                     <span className="text-3xl font-bold text-white">{stats.favBooks}</span>
+                                     <span className="text-xs text-slate-500 uppercase font-bold">Fav Books</span>
+                                 </div>
+                                 <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex flex-col items-center">
+                                     <Heart className="w-8 h-8 text-pink-500 mb-2" />
+                                     <span className="text-3xl font-bold text-white">{stats.favMovies}</span>
+                                     <span className="text-xs text-slate-500 uppercase font-bold">Fav Movies</span>
+                                 </div>
+                                 <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex flex-col items-center">
+                                     <Heart className="w-8 h-8 text-pink-500 mb-2" />
+                                     <span className="text-3xl font-bold text-white">{stats.favAdaptations}</span>
+                                     <span className="text-xs text-slate-500 uppercase font-bold">Fav Adaptations</span>
+                                 </div>
+                             </div>
+
+                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                 {/* Done Stats */}
+                                 <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                     <div>
+                                         <span className="block text-3xl font-bold text-white">{stats.readBooks}</span>
+                                         <span className="text-xs text-slate-500 uppercase font-bold">Books Read</span>
+                                     </div>
+                                     <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                                         <BookOpen className="w-6 h-6 text-green-500" />
+                                     </div>
+                                 </div>
+                                 <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                     <div>
+                                         <span className="block text-3xl font-bold text-white">{stats.watchedMovies}</span>
+                                         <span className="text-xs text-slate-500 uppercase font-bold">Movies Watched</span>
+                                     </div>
+                                     <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                                         <Film className="w-6 h-6 text-blue-500" />
+                                     </div>
+                                 </div>
+                                 <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 flex items-center justify-between">
+                                     <div>
+                                         <span className="block text-3xl font-bold text-white">{stats.completedAdaptations}</span>
+                                         <span className="text-xs text-slate-500 uppercase font-bold">Fully Completed</span>
+                                     </div>
+                                     <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
+                                         <CheckCircle className="w-6 h-6 text-purple-500" />
+                                     </div>
+                                 </div>
+                             </div>
+
+                             <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                 <h4 className="text-lg font-bold text-white mb-4">My Bio</h4>
+                                 <p className="text-slate-400 leading-relaxed italic">
+                                     {user.bio || "No bio added yet."}
+                                 </p>
+                             </div>
+
+                             <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                 <h4 className="text-lg font-bold text-white mb-4">Favorite Genres</h4>
+                                 <div className="flex flex-wrap gap-2">
+                                     {user.favoriteGenres && user.favoriteGenres.length > 0 ? user.favoriteGenres.map(g => (
+                                         <span key={g} className="px-3 py-1 rounded-full bg-slate-800 text-purple-400 border border-slate-700 text-sm">{g}</span>
+                                     )) : <span className="text-slate-500 text-sm">No genres selected.</span>}
+                                 </div>
+                             </div>
+                         </div>
+                     )}
+
+                     {activeTab === 'settings' && (
+                         <div className="bg-slate-900 rounded-3xl border border-slate-800 p-8 animate-fade-in">
+                             <h3 className="text-2xl font-serif font-bold text-white mb-6">Edit Profile</h3>
+                             <form onSubmit={handleSaveProfile} className="space-y-6">
+                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                     <div>
+                                         <label className="block text-sm font-bold text-slate-400 mb-2">Display Name</label>
+                                         <input 
+                                             type="text" 
+                                             value={formData.name} 
+                                             onChange={e => setFormData({...formData, name: e.target.value})}
+                                             className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
+                                         />
+                                     </div>
+                                     <div>
+                                         <label className="block text-sm font-bold text-slate-400 mb-2">Email</label>
+                                         <input 
+                                             type="email" 
+                                             value={formData.email} 
+                                             onChange={e => setFormData({...formData, email: e.target.value})}
+                                             className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
+                                         />
+                                     </div>
+                                 </div>
+                                 
+                                 <div>
+                                     <label className="block text-sm font-bold text-slate-400 mb-2">Password</label>
+                                     <div className="relative">
+                                         <input 
+                                             type={showPassword ? "text" : "password"}
+                                             value={formData.password} 
+                                             onChange={e => setFormData({...formData, password: e.target.value})}
+                                             className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500 pr-12"
+                                         />
+                                         <button 
+                                             type="button"
+                                             onClick={() => setShowPassword(!showPassword)}
+                                             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                                         >
+                                             {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                         </button>
+                                     </div>
+                                 </div>
+
+                                 <div>
+                                     <label className="block text-sm font-bold text-slate-400 mb-2">Bio</label>
+                                     <textarea 
+                                         rows={4}
+                                         value={formData.bio} 
+                                         onChange={e => setFormData({...formData, bio: e.target.value})}
+                                         className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
+                                     />
+                                 </div>
+
+                                 <div>
+                                     <label className="block text-sm font-bold text-slate-400 mb-3">Favorite Genres</label>
+                                     <div className="flex flex-wrap gap-2">
+                                         {ALL_GENRES.map(genre => (
+                                             <button
+                                                 key={genre}
+                                                 type="button"
+                                                 onClick={() => toggleGenre(genre)}
+                                                 className={`px-3 py-1 rounded-full text-sm border transition-all ${
+                                                     selectedGenres.includes(genre) 
+                                                     ? 'bg-purple-600 border-purple-500 text-white' 
+                                                     : 'bg-slate-950 border-slate-700 text-slate-400 hover:border-slate-500'
+                                                 }`}
+                                             >
+                                                 {genre}
+                                             </button>
+                                         ))}
+                                     </div>
+                                 </div>
+
+                                 <div className="pt-4 border-t border-slate-800 flex justify-end">
+                                     <button 
+                                         type="submit" 
+                                         disabled={saveStatus === 'saving'}
+                                         className={`px-8 py-3 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 ${
+                                             saveStatus === 'saved' 
+                                             ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-900/20' 
+                                             : 'bg-purple-600 hover:bg-purple-700 text-white shadow-purple-900/20'
+                                         }`}
+                                     >
+                                         {saveStatus === 'saving' ? (
+                                             <span className="flex items-center gap-2">
+                                                 <Loader2 className="w-5 h-5 animate-spin" /> Saving...
+                                             </span>
+                                         ) : saveStatus === 'saved' ? (
+                                             <span className="flex items-center gap-2">
+                                                 <Check className="w-5 h-5" /> Saved!
+                                             </span>
+                                         ) : (
+                                             <span className="flex items-center gap-2">
+                                                 <Save className="w-5 h-5" /> Save Changes
+                                             </span>
+                                         )}
+                                     </button>
+                                 </div>
+                             </form>
+                         </div>
+                     )}
+
+                     {activeTab === 'reviews' && (
+                         <div className="space-y-4 animate-fade-in">
+                             <h3 className="text-2xl font-serif font-bold text-white mb-6">My Reviews ({userReviews.length})</h3>
+                             {userReviews.length > 0 ? userReviews.map(review => (
+                                 <div key={review.id} className="bg-slate-900 p-6 rounded-2xl border border-slate-800 hover:border-slate-700 transition-colors">
+                                     {editingReviewId === review.id ? (
+                                         <div className="space-y-4">
+                                             <div className="flex justify-between items-center">
+                                                 <h4 className="font-bold text-white">{review.itemName}</h4>
+                                                 <div className="flex gap-1">
+                                                     {[1, 2, 3, 4, 5].map(star => (
+                                                         <button 
+                                                             key={star} 
+                                                             onClick={() => setEditReviewData({...editReviewData, rating: star})}
+                                                             type="button"
+                                                         >
+                                                             <Star className={`w-5 h-5 ${star <= editReviewData.rating ? 'text-yellow-500 fill-current' : 'text-slate-700'}`} />
+                                                         </button>
+                                                     ))}
+                                                 </div>
+                                             </div>
+                                             <textarea 
+                                                 className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:border-purple-500"
+                                                 rows={3}
+                                                 value={editReviewData.comment}
+                                                 onChange={e => setEditReviewData({...editReviewData, comment: e.target.value})}
+                                             />
+                                             <div className="flex justify-end gap-2">
+                                                 <button 
+                                                     onClick={() => setEditingReviewId(null)}
+                                                     className="px-4 py-2 text-slate-400 hover:text-white font-bold"
+                                                 >
+                                                     Cancel
+                                                 </button>
+                                                 <button 
+                                                     onClick={() => saveReview(review)}
+                                                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold"
+                                                 >
+                                                     Save
+                                                 </button>
+                                             </div>
+                                         </div>
+                                     ) : (
+                                         <>
+                                             <div className="flex justify-between items-start mb-3">
+                                                 <div>
+                                                     <h4 className="font-bold text-white text-lg">{review.itemName}</h4>
+                                                     <div className="flex items-center gap-1 text-yellow-500 text-sm">
+                                                         {[...Array(review.rating)].map((_, i) => <Star key={i} className="w-3 h-3 fill-current" />)}
+                                                     </div>
+                                                 </div>
+                                                 <div className="flex gap-2">
+                                                     <button 
+                                                         onClick={() => startEditReview(review)}
+                                                         className="p-2 text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                                     >
+                                                         <Edit2 className="w-4 h-4" />
+                                                     </button>
+                                                     <button 
+                                                         onClick={() => onDeleteReview(review.id)}
+                                                         className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                     >
+                                                         <Trash2 className="w-4 h-4" />
+                                                     </button>
+                                                 </div>
+                                             </div>
+                                             <p className="text-slate-300 leading-relaxed text-sm">{review.comment}</p>
+                                             <p className="text-slate-600 text-xs mt-3 text-right">{review.date}</p>
+                                         </>
+                                     )}
+                                 </div>
+                             )) : (
+                                 <div className="text-center py-12 bg-slate-900 rounded-2xl border border-slate-800">
+                                     <MessageSquare className="w-12 h-12 text-slate-700 mx-auto mb-4" />
+                                     <p className="text-slate-400">You haven't written any reviews yet.</p>
+                                 </div>
+                             )}
+                         </div>
+                     )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const App: React.FC = () => {
   const [adaptations, setAdaptations] = useState<Adaptation[]>(INITIAL_ADAPTATIONS);
   const [authors, setAuthors] = useState<Author[]>(INITIAL_AUTHORS);
@@ -2006,9 +2211,34 @@ const App: React.FC = () => {
   };
 
   const handleToggleFavorite = (id: string, type: 'book' | 'movie' | 'adaptation') => {
-      if (type === 'book') toggleProgress(id, 'isFavoriteBook');
-      else if (type === 'movie') toggleProgress(id, 'isFavoriteMovie');
-      else toggleProgress(id, 'isFavoriteAdaptation');
+      setUserProgress(prev => {
+          const current = prev[id] || {};
+          let updated = { ...current };
+
+          if (type === 'adaptation') {
+              // If currently fully favorited (both true), toggle both OFF.
+              // Otherwise (one or both false), toggle both ON.
+              const isFullyFavorite = current.isFavoriteBook && current.isFavoriteMovie;
+              const newState = !isFullyFavorite;
+              
+              updated.isFavoriteBook = newState;
+              updated.isFavoriteMovie = newState;
+              updated.isFavoriteAdaptation = newState;
+          } else if (type === 'book') {
+              updated.isFavoriteBook = !current.isFavoriteBook;
+              // Update parent adaptation status based on new state
+              updated.isFavoriteAdaptation = updated.isFavoriteBook && updated.isFavoriteMovie;
+          } else if (type === 'movie') {
+              updated.isFavoriteMovie = !current.isFavoriteMovie;
+              // Update parent adaptation status based on new state
+              updated.isFavoriteAdaptation = updated.isFavoriteBook && updated.isFavoriteMovie;
+          }
+
+          return {
+              ...prev,
+              [id]: updated
+          };
+      });
   };
 
   const handleToggleRead = (id: string) => {
@@ -2062,9 +2292,16 @@ const App: React.FC = () => {
       setAuthors(prev => prev.filter(a => a.id !== id));
   };
 
+  const handleUpdateReview = (updatedReview: Review) => {
+      setReviews(reviews.map(r => r.id === updatedReview.id ? updatedReview : r));
+  };
+
+  const handleDeleteReview = (id: string) => {
+      setReviews(reviews.filter(r => r.id !== id));
+  };
+
   const handleLogin = (email: string, password: string, name?: string) => {
       const role = email === 'admin@gmail.com' ? 'admin' : 'user';
-      // Use provided name for signup, or default logic for login
       const userName = name || (role === 'admin' ? 'System Administrator' : 'Book Lover');
       
       setCurrentUser({
@@ -2116,6 +2353,7 @@ const App: React.FC = () => {
                     onToggleFavorite={handleToggleFavorite}
                     onToggleRead={handleToggleRead}
                     onToggleWatched={handleToggleWatched}
+                    onToggleComplete={handleToggleDone}
                   /> 
                 : <Navigate to="/login" />
              } 
@@ -2139,6 +2377,8 @@ const App: React.FC = () => {
                     progress={userProgress}
                     onToggleRead={handleToggleRead}
                     onToggleWatched={handleToggleWatched}
+                    reviews={reviews}
+                    user={currentUser}
                   />
                 : <Navigate to="/login" /> 
             } 
@@ -2163,7 +2403,20 @@ const App: React.FC = () => {
                 : <Navigate to="/" replace />
             } 
           />
-          <Route path="/profile" element={currentUser ? <Profile user={currentUser} onUpdate={handleUpdateProfile} userProgress={userProgress} reviews={reviews} /> : <Navigate to="/login" />} />
+          <Route 
+            path="/profile" 
+            element={currentUser 
+                ? <Profile 
+                    user={currentUser} 
+                    onUpdate={handleUpdateProfile} 
+                    userProgress={userProgress} 
+                    reviews={reviews} 
+                    onUpdateReview={handleUpdateReview} 
+                    onDeleteReview={handleDeleteReview} 
+                  /> 
+                : <Navigate to="/login" />
+            } 
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Layout>
